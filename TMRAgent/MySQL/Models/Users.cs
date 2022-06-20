@@ -19,5 +19,8 @@ namespace TMRAgent.MySQL.Models
 
         [Column(Name = "lastseen"), Nullable]
         public DateTime LastSeen { get; set; }
+
+        [Column(Name = "twitchid"), Nullable]
+        public int TwitchId { get; set; }
     }
 }

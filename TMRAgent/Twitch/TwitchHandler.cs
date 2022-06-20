@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using LinqToDB;
@@ -18,7 +19,10 @@ namespace TMRAgent.Twitch
         public static TwitchHandler Instance = _instance ??= new TwitchHandler();
         private static readonly TwitchHandler? _instance;
 
-        TwitchClient client;
+        private TwitchClient client;
+
+        private MySQL.Commands.AddModeratorCommand _addModeratorCommand = new MySQL.Commands.AddModeratorCommand();
+        private MySQL.Commands.RemoveModeratorCommand _removeModeratorCommand = new MySQL.Commands.RemoveModeratorCommand();
 
         public void Connect()
         {
@@ -41,9 +45,13 @@ namespace TMRAgent.Twitch
             client.OnChannelStateChanged += ClientOnOnChannelStateChanged;
             client.OnReSubscriber += ClientOnOnReSubscriber;
             client.OnModeratorsReceived += ClientOnOnModeratorsReceived;
- 
 
             client.Connect();
+        }
+
+        public TwitchClient GetTwitchClient()
+        {
+            return client;
         }
 
         private void ClientOnOnModeratorsReceived(object? sender, OnModeratorsReceivedArgs e)
@@ -80,9 +88,9 @@ namespace TMRAgent.Twitch
         private void Client_OnMessageReceived(object sender, OnMessageReceivedArgs e)
         {
 
-            if (e.ChatMessage.Message.ToLower().Equals("!tmr"))
+            if ( e.ChatMessage.Message.StartsWith("!!") && e.ChatMessage.IsModerator )
             {
-                client.SendMessage(e.ChatMessage.Channel, $"I am Twitch Message Robot.  Database is {MySQL.MySQLHandler.Instance.DatabaseVersion}, I am running on {Environment.OSVersion}");
+                ProcessChatCommandMessage(e.ChatMessage);
                 return;
             }
 
@@ -92,7 +100,7 @@ namespace TMRAgent.Twitch
                     $"Processing Command Message from {e.ChatMessage.Username} [{e.ChatMessage.Message}]",
                     ConsoleUtil.LogLevel.INFO);
 
-                MySQL.MySQLHandler.Instance.ProcessCommandMessage(e.ChatMessage.Username, e.ChatMessage.IsModerator,
+                MySQL.MySQLHandler.Instance.Commands.ProcessCommandMessage(e.ChatMessage.Username, int.Parse(e.ChatMessage.UserId), e.ChatMessage.IsModerator,
                     e.ChatMessage.Message);
             }
             else
@@ -101,14 +109,50 @@ namespace TMRAgent.Twitch
                     $"Processing Chat Message from {e.ChatMessage.Username} [{e.ChatMessage.Message}]",
                     ConsoleUtil.LogLevel.INFO);
 
-                MySQL.MySQLHandler.Instance.ProcessChatMessage(e.ChatMessage.Username, e.ChatMessage.IsModerator,
+                MySQL.MySQLHandler.Instance.Messages.ProcessChatMessage(e.ChatMessage.Username, int.Parse(e.ChatMessage.UserId), e.ChatMessage.IsModerator,
                     e.ChatMessage.Message);
             }
         }
 
+        private void ProcessChatCommandMessage(ChatMessage chatMessage)
+        {
+            var parameters = chatMessage.Message.Split(' ', 2);
+
+            switch (parameters[0].ToLower())
+            {
+                case "!!add_mod_action":
+                    _addModeratorCommand.Handle(chatMessage, parameters);
+                    break;
+
+                case "!!remove_mod_action":
+                    _removeModeratorCommand.Handle(chatMessage, parameters);
+                    break;
+
+                case "!!about":
+                    client.SendMessage(chatMessage.Channel, $"I am Twitch Monitor Robot v{Program.Version} - Watching Twitch so you don't have to. (Created by AlienX) | Running On: {Environment.OSVersion}");
+                    break;
+
+                case "!!walls":
+                    using (var db = new MySQL.DBConnection.Database())
+                    {
+                        var walls = db.Messages.Where( x => x.Message.ToLower().Contains("wall") && !x.Message.StartsWith("Stats")).Count();
+                        client.SendMessage(chatMessage.Channel, $"Stats: At least {walls} messages have been sent describing how much @Mind1 shoots walls - GO MIND!");
+                    }
+                    break;
+                /*
+                case "!!speak":
+                    if ( parameters.Length == 2)
+                    {
+                        client.SendMessage(chatMessage.Channel, parameters[1]);
+                    }
+                    break;
+                */
+            }
+        
+        }
+
         private void Client_OnWhisperReceived(object sender, OnWhisperReceivedArgs e)
         {
-
         }
 
         private void Client_OnNewSubscriber(object sender, OnNewSubscriberArgs e)

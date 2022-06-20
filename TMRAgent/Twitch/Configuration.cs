@@ -13,6 +13,8 @@ namespace TMRAgent.Twitch
     {
         public string? Username;
         public string? AuthToken;
+        public string? PubSubToken;
+        public string? PubSubChannelId;
         public string? AppClientId;
         public string? ChannelName;
     }
@@ -31,7 +33,7 @@ namespace TMRAgent.Twitch
             try
             {
                 #if DEBUG
-                _configFileName = "twitch_debug.conf";
+                //_configFileName = "twitch_debug.conf";
                 #endif
 
                 Load();

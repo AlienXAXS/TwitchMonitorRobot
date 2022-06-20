@@ -8,6 +8,7 @@ using TwitchLib.Api;
 using TwitchLib.Api.Services;
 using TwitchLib.Api.Services.Events;
 using TwitchLib.Api.Services.Events.LiveStreamMonitor;
+using TwitchLib.PubSub;
 
 namespace TMRAgent.Twitch
 {
@@ -17,6 +18,7 @@ namespace TMRAgent.Twitch
         private static readonly TwitchLiveMonitor? _instance;
 
         public TwitchAPI twitchApi;
+        private TwitchPubSub pubSubClient;
         public LiveStreamMonitorService liveStreamMonitorService;
 
         public int CurrentLiveStreamId;
@@ -26,6 +28,7 @@ namespace TMRAgent.Twitch
         public void Start()
         {
             Task.Run(() => StartAsyncMonitor());
+            Task.Run(() => StartPubSub());
         }
 
         public async void StartAsyncMonitor()
@@ -40,27 +43,64 @@ namespace TMRAgent.Twitch
             liveStreamMonitorService.OnStreamOnline += LiveStreamMonitorService_OnStreamOnline;
             liveStreamMonitorService.OnStreamOffline += LiveStreamMonitorService_OnStreamOffline;
 
-            liveStreamMonitorService.OnStreamUpdate += LiveStreamMonitorService_OnStreamUpdate;
-
             liveStreamMonitorService.Start();
 
             _quitAppEvent.WaitOne();
         }
 
-        private void LiveStreamMonitorService_OnStreamUpdate(object sender, OnStreamUpdateArgs e)
+        public async void StartPubSub()
         {
-            
+            pubSubClient = new TwitchPubSub();
+            pubSubClient.ListenToBitsEventsV2(ConfigurationHandler.Instance.Configuration.PubSubChannelId);
+            pubSubClient.ListenToChannelPoints(ConfigurationHandler.Instance.Configuration.PubSubChannelId);
+
+            pubSubClient.OnPubSubServiceConnected += PubSubClient_OnPubSubServiceConnected;
+            pubSubClient.OnBitsReceivedV2 += PubSubClient_OnBitsReceivedV2;
+            pubSubClient.OnChannelPointsRewardRedeemed += PubSubClient_OnChannelPointsRewardRedeemed;
+
+            pubSubClient.OnListenResponse += PubSubClient_OnListenResponse;
+
+            pubSubClient.Connect();
+            _quitAppEvent.WaitOne();
+        }
+
+        private void PubSubClient_OnListenResponse(object sender, TwitchLib.PubSub.Events.OnListenResponseArgs e)
+        {
+            if (!e.Successful)
+                ConsoleUtil.WriteToConsole($"Failed to listen! Response: {e.Response.Error}", ConsoleUtil.LogLevel.ERROR);
+            else
+                ConsoleUtil.WriteToConsole($"Successfully hooked {e.Topic}!", ConsoleUtil.LogLevel.INFO);
+        }
+
+        private void PubSubClient_OnChannelPointsRewardRedeemed(object sender, TwitchLib.PubSub.Events.OnChannelPointsRewardRedeemedArgs e)
+        {
+            MySQL.MySQLHandler.Instance.Bits.ProcessBitsRedeem(
+                e.RewardRedeemed.Redemption.User.DisplayName,
+                int.Parse(e.RewardRedeemed.Redemption.User.Id),
+                e.RewardRedeemed.Redemption.Reward.Title,
+                e.RewardRedeemed.Redemption.Reward.Cost);
+        }
+
+        private void PubSubClient_OnBitsReceivedV2(object sender, TwitchLib.PubSub.Events.OnBitsReceivedV2Args e)
+        {
+            //TODO: Finish this part lulz.
+        }
+
+        private void PubSubClient_OnPubSubServiceConnected(object sender, EventArgs e)
+        {
+            ConsoleUtil.WriteToConsole($"[Twitch-PubSub] Successfully Connected to Public Subscriptions", ConsoleUtil.LogLevel.INFO);
+            pubSubClient.SendTopics(ConfigurationHandler.Instance.Configuration.PubSubToken);
         }
 
         private void LiveStreamMonitorService_OnStreamOffline(object sender, OnStreamOfflineArgs e)
         {
-            MySQL.MySQLHandler.Instance.ProcessStreamOffline(DateTime.Now.ToUniversalTime(), e.Stream.ViewerCount);
+            MySQL.MySQLHandler.Instance.Streams.ProcessStreamOffline(DateTime.Now.ToUniversalTime(), e.Stream.ViewerCount);
             CurrentLiveStreamId = -1;
         }
 
         private void LiveStreamMonitorService_OnStreamOnline(object sender, OnStreamOnlineArgs e)
         {
-            MySQL.MySQLHandler.Instance.ProcessStreamOnline(e.Stream.StartedAt);
+            MySQL.MySQLHandler.Instance.Streams.ProcessStreamOnline(e.Stream.StartedAt);
         }
 
         public void Dispose()

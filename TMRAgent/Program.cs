@@ -12,6 +12,8 @@ namespace TMRAgent
     {
         private readonly ManualResetEvent _quitAppEvent = new ManualResetEvent(false);
 
+        public static string Version = "0.0.2";
+
         static void Main(string[] args)
         {
             new Program().MainMethod();
@@ -56,7 +58,7 @@ namespace TMRAgent
             }
 
             ConsoleUtil.WriteToConsole("Connecting to MySQL Database Backend...", ConsoleUtil.LogLevel.INFO);
-            DataConnection.DefaultSettings = new MySettings();
+            DataConnection.DefaultSettings = new MySQL.DBConnection.MySettings();
             MySQL.MySQLHandler.Instance.Connect();
 
             ConsoleUtil.WriteToConsole(" -> Success", ConsoleUtil.LogLevel.INFO);
@@ -76,7 +78,6 @@ namespace TMRAgent
 
             Twitch.TwitchHandler.Instance.Dispose();
             Twitch.TwitchLiveMonitor.Instance.Dispose();
-            MySQL.MySQLHandler.Instance.Dispose();
         }
         private void HandleApplicationExitEvent()
         {
