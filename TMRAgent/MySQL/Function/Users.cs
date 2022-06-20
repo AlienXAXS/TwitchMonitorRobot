@@ -28,7 +28,7 @@ namespace TMRAgent.MySQL.Function
                     // First find a user with that name, but only if they dont have a twitch ID
                     var usrTwitchIdFix = db.Users.DefaultIfEmpty(null).FirstOrDefault(u => u.Username.Equals(Username));
 
-                    if (usrTwitchIdFix.TwitchId == 0)
+                    if (usrTwitchIdFix != null && usrTwitchIdFix.TwitchId == 0)
                     {
                         // Fix the user
                         ConsoleUtil.WriteToConsole($"Fixing TwitchID for user {Username} = {TwitchUserId}", ConsoleUtil.LogLevel.INFO, ConsoleColor.Yellow);
