@@ -15,9 +15,18 @@ namespace TMRAgent.MySQL.Function
             {
                 using (var db = new DBConnection.Database())
                 {
-                    Twitch.TwitchLiveMonitor.Instance.CurrentLiveStreamId = (int)db.Streams
-                        .Value(p => p.Start, dateTime)
-                        .InsertWithInt32Identity();
+                    var currentStream = db.Streams.DefaultIfEmpty(null).FirstOrDefault(x => x.Start == dateTime);
+                    if (currentStream != null)
+                    {
+                        ConsoleUtil.WriteToConsole($"[StreamEvent] Found an existing row in the Database for this ongoing stream, using StreamID {currentStream.Id}.", ConsoleUtil.LogLevel.INFO, ConsoleColor.Yellow);
+                        Twitch.TwitchLiveMonitor.Instance.CurrentLiveStreamId = currentStream.Id;
+                    }
+                    else
+                    {
+                        Twitch.TwitchLiveMonitor.Instance.CurrentLiveStreamId = (int)db.Streams
+                            .Value(p => p.Start, dateTime)
+                            .InsertWithInt32Identity();
+                    }
                 }
             }
             catch (Exception ex)
