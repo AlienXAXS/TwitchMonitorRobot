@@ -42,10 +42,16 @@ namespace TMRAgent.Twitch
 
             liveStreamMonitorService.OnStreamOnline += LiveStreamMonitorService_OnStreamOnline;
             liveStreamMonitorService.OnStreamOffline += LiveStreamMonitorService_OnStreamOffline;
+            liveStreamMonitorService.OnStreamUpdate += LiveStreamMonitorService_OnStreamUpdate;
 
             liveStreamMonitorService.Start();
 
             _quitAppEvent.WaitOne();
+        }
+
+        private void LiveStreamMonitorService_OnStreamUpdate(object sender, OnStreamUpdateArgs e)
+        {
+            ConsoleUtil.WriteToConsole($"Stream {e.Stream.Id} is Updated: {e.Stream.StartedAt} | {e.Stream.Title} | {e.Stream.ViewerCount}", ConsoleUtil.LogLevel.INFO, ConsoleColor.Yellow);
         }
 
         public async void StartPubSub()
@@ -58,10 +64,23 @@ namespace TMRAgent.Twitch
             pubSubClient.OnBitsReceivedV2 += PubSubClient_OnBitsReceivedV2;
             pubSubClient.OnChannelPointsRewardRedeemed += PubSubClient_OnChannelPointsRewardRedeemed;
 
+            pubSubClient.OnStreamDown += PubSubClient_OnStreamDown;
+            pubSubClient.OnStreamUp += PubSubClient_OnStreamUp;
+
             pubSubClient.OnListenResponse += PubSubClient_OnListenResponse;
 
             pubSubClient.Connect();
             _quitAppEvent.WaitOne();
+        }
+
+        private void PubSubClient_OnStreamUp(object sender, TwitchLib.PubSub.Events.OnStreamUpArgs e)
+        {
+            ConsoleUtil.WriteToConsole($"Stream {e.ChannelId} PubSub Event: StreamUp", ConsoleUtil.LogLevel.INFO, ConsoleColor.Green);
+        }
+
+        private void PubSubClient_OnStreamDown(object sender, TwitchLib.PubSub.Events.OnStreamDownArgs e)
+        {
+            ConsoleUtil.WriteToConsole($"Stream {e.ChannelId} PubSub Event: StreamDown", ConsoleUtil.LogLevel.INFO, ConsoleColor.Green);
         }
 
         private void PubSubClient_OnListenResponse(object sender, TwitchLib.PubSub.Events.OnListenResponseArgs e)
@@ -74,11 +93,17 @@ namespace TMRAgent.Twitch
 
         private void PubSubClient_OnChannelPointsRewardRedeemed(object sender, TwitchLib.PubSub.Events.OnChannelPointsRewardRedeemedArgs e)
         {
-            MySQL.MySQLHandler.Instance.Bits.ProcessBitsRedeem(
-                e.RewardRedeemed.Redemption.User.DisplayName,
-                int.Parse(e.RewardRedeemed.Redemption.User.Id),
-                e.RewardRedeemed.Redemption.Reward.Title,
-                e.RewardRedeemed.Redemption.Reward.Cost);
+            try
+            {
+                MySQL.MySQLHandler.Instance.Bits.ProcessBitsRedeem(
+                    e.RewardRedeemed.Redemption.User.DisplayName,
+                    int.Parse(e.RewardRedeemed.Redemption.User.Id),
+                    e.RewardRedeemed.Redemption.Reward.Title,
+                    e.RewardRedeemed.Redemption.Reward.Cost);
+            } catch (Exception ex)
+            {
+                ConsoleUtil.WriteToConsole($"[Error] PubSubClient_OnChannelPointsRewardRedeemed -> {ex.Message}", ConsoleUtil.LogLevel.ERROR, ConsoleColor.Red);
+            }
         }
 
         private void PubSubClient_OnBitsReceivedV2(object sender, TwitchLib.PubSub.Events.OnBitsReceivedV2Args e)
@@ -94,12 +119,14 @@ namespace TMRAgent.Twitch
 
         private void LiveStreamMonitorService_OnStreamOffline(object sender, OnStreamOfflineArgs e)
         {
+            ConsoleUtil.WriteToConsole("[StreamEvent] Stream is now marked as Offline, uploading stats to Database.", ConsoleUtil.LogLevel.INFO, ConsoleColor.Yellow);
             MySQL.MySQLHandler.Instance.Streams.ProcessStreamOffline(DateTime.Now.ToUniversalTime(), e.Stream.ViewerCount);
             CurrentLiveStreamId = -1;
         }
 
         private void LiveStreamMonitorService_OnStreamOnline(object sender, OnStreamOnlineArgs e)
         {
+            ConsoleUtil.WriteToConsole("[StreamEvent] Stream is now marked as Online, creating new Database entry.", ConsoleUtil.LogLevel.INFO, ConsoleColor.Yellow);
             MySQL.MySQLHandler.Instance.Streams.ProcessStreamOnline(e.Stream.StartedAt);
         }
 
