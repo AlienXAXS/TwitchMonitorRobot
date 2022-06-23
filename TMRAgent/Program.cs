@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using LinqToDB;
 using LinqToDB.Data;
-using TMRAgent.MySQL;
 
 namespace TMRAgent
 {
@@ -22,6 +19,8 @@ namespace TMRAgent
         public void MainMethod()
         {
             _quitAppEvent.Reset();
+
+            DataConnection.DefaultSettings = new MySQL.DBConnection.MySettings();
 
             AppDomain.CurrentDomain.ProcessExit += (sender, args) => HandleApplicationExitEvent();
             Console.CancelKeyPress += (sender, args) => HandleApplicationExitEvent();
@@ -58,9 +57,7 @@ namespace TMRAgent
             }
 
             ConsoleUtil.WriteToConsole("Connecting to MySQL Database Backend...", ConsoleUtil.LogLevel.INFO);
-            DataConnection.DefaultSettings = new MySQL.DBConnection.MySettings();
             MySQL.MySQLHandler.Instance.Connect();
-
             ConsoleUtil.WriteToConsole(" -> Success", ConsoleUtil.LogLevel.INFO);
 
             ConsoleUtil.WriteToConsole("Starting Twitch Monitor", ConsoleUtil.LogLevel.INFO);

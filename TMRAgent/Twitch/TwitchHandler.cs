@@ -23,6 +23,7 @@ namespace TMRAgent.Twitch
 
         private MySQL.Commands.AddModeratorCommand _addModeratorCommand = new MySQL.Commands.AddModeratorCommand();
         private MySQL.Commands.RemoveModeratorCommand _removeModeratorCommand = new MySQL.Commands.RemoveModeratorCommand();
+        private MySQL.Commands.TopCommand _topCommand = new MySQL.Commands.TopCommand();
 
         public void Connect()
         {
@@ -88,12 +89,11 @@ namespace TMRAgent.Twitch
         private void Client_OnMessageReceived(object sender, OnMessageReceivedArgs e)
         {
 
-            if ( e.ChatMessage.Message.StartsWith("!!") && e.ChatMessage.IsModerator )
+            if ( e.ChatMessage.Message.StartsWith("!!") )
             {
                 ProcessChatCommandMessage(e.ChatMessage);
                 return;
             }
-
             if (e.ChatMessage.Message.StartsWith("!"))
             {
                 ConsoleUtil.WriteToConsole(
@@ -121,34 +121,55 @@ namespace TMRAgent.Twitch
             switch (parameters[0].ToLower())
             {
                 case "!!add_mod_action":
+                    if (!IsUserModeratorOrBroadcaster(chatMessage)) return;
                     _addModeratorCommand.Handle(chatMessage, parameters);
                     break;
 
                 case "!!remove_mod_action":
+                    if (!IsUserModeratorOrBroadcaster(chatMessage)) return;
                     _removeModeratorCommand.Handle(chatMessage, parameters);
+                    break;
+
+                case "!!walls":
+                    using (var db = new MySQL.DBConnection.Database())
+                    {
+                        var walls = db.Messages.Where(x => x.Message.ToLower().Contains("wall") && !x.Message.StartsWith("Stats")).Count();
+                        client.SendMessage(chatMessage.Channel, $"Stats: At least {walls} messages have been sent describing how much @Mind1 shoots walls - GO MIND!");
+                    }
+                    break;
+
+                case "!!dead":
+                    using ( var db = new MySQL.DBConnection.Database())
+                    {
+                        var deadCmds = db.Commands.Where(x => x.Command.ToLower().Equals("!dead"));
+                        client.SendMessage(chatMessage.Channel, $"Stats: Mind1 has died at least {deadCmds.Count()} times - Ouch! (num of !dead used)");
+                    }
                     break;
 
                 case "!!about":
                     client.SendMessage(chatMessage.Channel, $"I am Twitch Monitor Robot v{Program.Version} - Watching Twitch so you don't have to. (Created by AlienX) | Running On: {Environment.OSVersion}");
                     break;
 
-                case "!!walls":
-                    using (var db = new MySQL.DBConnection.Database())
-                    {
-                        var walls = db.Messages.Where( x => x.Message.ToLower().Contains("wall") && !x.Message.StartsWith("Stats")).Count();
-                        client.SendMessage(chatMessage.Channel, $"Stats: At least {walls} messages have been sent describing how much @Mind1 shoots walls - GO MIND!");
-                    }
+                case "!!top":
+                    _topCommand.Handle(chatMessage, parameters);
                     break;
-                /*
-                case "!!speak":
-                    if ( parameters.Length == 2)
-                    {
-                        client.SendMessage(chatMessage.Channel, parameters[1]);
-                    }
+
+                case "!!help":
+                    client.SendMessage(chatMessage.Channel, $"Commands are: !!top [redeem], !!about, !!help (more added soon!)");
                     break;
-                */
             }
-        
+        }
+
+        private bool IsUserModeratorOrBroadcaster(ChatMessage chatMessage)
+        {
+            if (chatMessage.IsModerator || chatMessage.IsBroadcaster)
+            {
+                return true;
+            } else
+            {
+                client.SendMessage(chatMessage.Channel, $"Sorry {chatMessage.Username}, you do not have access to that command");
+                return false;
+            }
         }
 
         private void Client_OnWhisperReceived(object sender, OnWhisperReceivedArgs e)

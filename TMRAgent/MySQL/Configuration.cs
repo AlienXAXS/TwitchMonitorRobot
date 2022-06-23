@@ -28,7 +28,7 @@ namespace TMRAgent.MySQL
             try
             {
                 #if DEBUG
-                _configFileName = "db_debug.conf";
+                //_configFileName = "db_debug.conf";
                 #endif
 
                 Load();
