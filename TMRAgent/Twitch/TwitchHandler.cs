@@ -73,11 +73,6 @@ namespace TMRAgent.Twitch
             
         }
 
-        private void ClientOnOnReSubscriber(object? sender, OnReSubscriberArgs e)
-        {
-            ConsoleUtil.WriteToConsole($"[SubDetector] User {e.ReSubscriber.DisplayName} Resubbed!", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
-        }
-
         private void ClientOnOnChannelStateChanged(object? sender, OnChannelStateChangedArgs e)
         {
             
@@ -202,34 +197,49 @@ namespace TMRAgent.Twitch
 
         private void Client_OnNewSubscriber(object sender, OnNewSubscriberArgs e)
         {
-            var rnd = new Random(DateTime.Now.Millisecond);
-
             if (e.Subscriber.SubscriptionPlan == SubscriptionPlan.Prime)
             {
                 ConsoleUtil.WriteToConsole($"[SubDetector] User {e.Subscriber.DisplayName} New Prime Sub!", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
-
-                if (rnd.Next(1, 2) == 1)
-                {
-                    client.SendMessage(e.Channel, $"@{e.Subscriber.DisplayName} Thanks for the prime sub!!!");
-                }
-                else
-                {
-                    client.SendMessage(e.Channel, $"!handsup @{e.Subscriber.DisplayName} - Thanks for the prime sub!!!");
-                }
-
+                ProcessResubReply(e.Subscriber.DisplayName, true);
             }
             else
             {
                 ConsoleUtil.WriteToConsole($"[SubDetector] User {e.Subscriber.DisplayName} New Sub!", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
-                if (rnd.Next(1, 2) == 1)
+                ProcessResubReply(e.Subscriber.DisplayName, false);
+            }
+        }
+
+        private void ClientOnOnReSubscriber(object? sender, OnReSubscriberArgs e)
+        {
+            ConsoleUtil.WriteToConsole($"[SubDetector] User {e.ReSubscriber.DisplayName} Resubbed!", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
+            ProcessResubReply(e.ReSubscriber.DisplayName, e.ReSubscriber.SubscriptionPlan == SubscriptionPlan.Prime);
+        }
+
+        private void ProcessResubReply(string DisplayName, bool isPrime = false, bool isReSub = false)
+        {
+            var rnd = new Random(DateTime.Now.Millisecond);
+            if (rnd.Next(1, 3) == 1)
+            {
+                if (isPrime)
                 {
-                    client.SendMessage(e.Channel, $"@{e.Subscriber.DisplayName} Thanks for the sub!!!");
-                } else
+                    client.SendMessage(ConfigurationHandler.Instance.Configuration.ChannelName, $"@{DisplayName} Thanks for the prime sub!!!");
+                }
+                else
                 {
-                    client.SendMessage(e.Channel, $"!handsup @{e.Subscriber.DisplayName} - Thanks for the sub!!!");
+                    client.SendMessage(ConfigurationHandler.Instance.Configuration.ChannelName, $"@{DisplayName} Thanks for the sub!!!");
                 }
             }
-                
+            else
+            {
+                if (isPrime)
+                {
+                    client.SendMessage(ConfigurationHandler.Instance.Configuration.ChannelName, $"!handsup @{DisplayName} Thanks for the prime sub!!!");
+                }
+                else
+                {
+                    client.SendMessage(ConfigurationHandler.Instance.Configuration.ChannelName, $"!handsup @{DisplayName} Thanks for the sub!!!");
+                }
+            }
         }
 
         public void Dispose()
