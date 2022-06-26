@@ -6,6 +6,7 @@ using System.Threading;
 using LinqToDB;
 using LinqToDB.Common;
 using TwitchLib.Client;
+using TwitchLib.Client.Enums;
 using TwitchLib.Client.Events;
 using TwitchLib.Client.Extensions;
 using TwitchLib.Client.Models;
@@ -46,8 +47,20 @@ namespace TMRAgent.Twitch
             client.OnChannelStateChanged += ClientOnOnChannelStateChanged;
             client.OnReSubscriber += ClientOnOnReSubscriber;
             client.OnModeratorsReceived += ClientOnOnModeratorsReceived;
+            client.OnRitualNewChatter += Client_OnRitualNewChatter;
+            client.OnGiftedSubscription += Client_OnGiftedSubscription;
 
             client.Connect();
+        }
+
+        private void Client_OnGiftedSubscription(object sender, OnGiftedSubscriptionArgs e)
+        {
+            ConsoleUtil.WriteToConsole($"[GiftSubEvent] {e.GiftedSubscription.DisplayName} gifted {e.GiftedSubscription.MsgParamRecipientUserName} a sub!", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
+        }
+
+        private void Client_OnRitualNewChatter(object sender, OnRitualNewChatterArgs e)
+        {
+            ConsoleUtil.WriteToConsole($"Possible First Time Chatter: {e.RitualNewChatter.DisplayName}", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
         }
 
         public TwitchClient GetTwitchClient()
@@ -62,7 +75,7 @@ namespace TMRAgent.Twitch
 
         private void ClientOnOnReSubscriber(object? sender, OnReSubscriberArgs e)
         {
-            
+            ConsoleUtil.WriteToConsole($"[SubDetector] User {e.ReSubscriber.DisplayName} Resubbed!", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
         }
 
         private void ClientOnOnChannelStateChanged(object? sender, OnChannelStateChangedArgs e)
@@ -105,12 +118,18 @@ namespace TMRAgent.Twitch
             }
             else
             {
+
                 ConsoleUtil.WriteToConsole(
                     $"Processing Chat Message from {e.ChatMessage.Username} [{e.ChatMessage.Message}]",
                     ConsoleUtil.LogLevel.INFO);
 
                 MySQL.MySQLHandler.Instance.Messages.ProcessChatMessage(e.ChatMessage.Username, int.Parse(e.ChatMessage.UserId), e.ChatMessage.IsModerator,
                     e.ChatMessage.Message);
+
+                if (e.ChatMessage.Bits > 0)
+                {
+                    ConsoleUtil.WriteToConsole($"User {e.ChatMessage.Username} sent {e.ChatMessage.Bits} bits with their message", ConsoleUtil.LogLevel.INFO, ConsoleColor.Green);
+                }
             }
         }
 
@@ -147,7 +166,12 @@ namespace TMRAgent.Twitch
                     break;
 
                 case "!!about":
-                    client.SendMessage(chatMessage.Channel, $"I am Twitch Monitor Robot v{Program.Version} - Watching Twitch so you don't have to. (Created by AlienX) | Running On: {Environment.OSVersion}");
+                    using ( var db = new MySQL.DBConnection.Database() )
+                    {
+                        var TotalUsers = db.Users.Count();
+                        var TotalMessages = db.Messages.Count();
+                        client.SendMessage(chatMessage.Channel, $"I am Twitch Monitor Robot v{Program.Version} - I am logging everything that happens here.  Currently watching {TotalUsers:n0} users having sent {TotalMessages:n0} chat messages! - Created by AlienX");
+                    }
                     break;
 
                 case "!!top":
@@ -178,7 +202,34 @@ namespace TMRAgent.Twitch
 
         private void Client_OnNewSubscriber(object sender, OnNewSubscriberArgs e)
         {
+            var rnd = new Random(DateTime.Now.Millisecond);
 
+            if (e.Subscriber.SubscriptionPlan == SubscriptionPlan.Prime)
+            {
+                ConsoleUtil.WriteToConsole($"[SubDetector] User {e.Subscriber.DisplayName} New Prime Sub!", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
+
+                if (rnd.Next(1, 2) == 1)
+                {
+                    client.SendMessage(e.Channel, $"@{e.Subscriber.DisplayName} Thanks for the prime sub!!!");
+                }
+                else
+                {
+                    client.SendMessage(e.Channel, $"!handsup @{e.Subscriber.DisplayName} - Thanks for the prime sub!!!");
+                }
+
+            }
+            else
+            {
+                ConsoleUtil.WriteToConsole($"[SubDetector] User {e.Subscriber.DisplayName} New Sub!", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
+                if (rnd.Next(1, 2) == 1)
+                {
+                    client.SendMessage(e.Channel, $"@{e.Subscriber.DisplayName} Thanks for the sub!!!");
+                } else
+                {
+                    client.SendMessage(e.Channel, $"!handsup @{e.Subscriber.DisplayName} - Thanks for the sub!!!");
+                }
+            }
+                
         }
 
         public void Dispose()

@@ -9,7 +9,7 @@ namespace TMRAgent
     {
         private readonly ManualResetEvent _quitAppEvent = new ManualResetEvent(false);
 
-        public static string Version = "0.0.4";
+        public static string Version = "0.0.5 Alpha";
 
         static void Main(string[] args)
         {

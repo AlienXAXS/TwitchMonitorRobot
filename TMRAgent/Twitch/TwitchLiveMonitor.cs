@@ -51,7 +51,7 @@ namespace TMRAgent.Twitch
 
         private void LiveStreamMonitorService_OnStreamUpdate(object sender, OnStreamUpdateArgs e)
         {
-            ConsoleUtil.WriteToConsole($"Stream {e.Stream.Id} is Updated: {e.Stream.StartedAt} | {e.Stream.Title} | {e.Stream.ViewerCount}", ConsoleUtil.LogLevel.INFO, ConsoleColor.Yellow);
+            //ConsoleUtil.WriteToConsole($"Stream {e.Stream.Id} is Updated: {e.Stream.StartedAt} | {e.Stream.Title} | {e.Stream.ViewerCount}", ConsoleUtil.LogLevel.INFO, ConsoleColor.Yellow);
         }
 
         public async void StartPubSub()

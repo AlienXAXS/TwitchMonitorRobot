@@ -19,7 +19,7 @@ namespace TMRAgent.MySQL.Function
                 return UsernameMemory[Username];
             }
 
-            var userId = 0;
+            var userId = -1;
 
             try
             {
