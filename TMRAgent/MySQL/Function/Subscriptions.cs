@@ -6,7 +6,7 @@ namespace TMRAgent.MySQL.Function
     internal class Subscriptions
     {
 
-        public void ProcessSubscription(string Username, string UserId, bool IsRenew, bool IsPrime = false, bool IsGift = false, string GiftUserId = "")
+        public void ProcessSubscription(string Username, string UserId, bool IsRenew, bool IsPrime = false, bool IsGift = false, string GiftUserName = "", string GiftUserId = "")
         {
             try
             {
@@ -17,7 +17,7 @@ namespace TMRAgent.MySQL.Function
                 if (GiftUserId != "")
                 {
                     intGiftUserId = int.Parse(GiftUserId);
-                    GiftUserDBIndex = MySQLHandler.Instance.Users.GetUserId(Username, intGiftUserId);
+                    GiftUserDBIndex = MySQLHandler.Instance.Users.GetUserId(GiftUserName, intGiftUserId);
                 }
 
                 var UserIdDBIndex = MySQLHandler.Instance.Users.GetUserId(Username, intUserId);
