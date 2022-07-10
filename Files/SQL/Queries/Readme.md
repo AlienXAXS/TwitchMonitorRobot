@@ -1,0 +1,1 @@
+Just some example SQL Queries I use with ReDash :)
