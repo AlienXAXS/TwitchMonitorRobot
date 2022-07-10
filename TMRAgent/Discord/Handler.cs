@@ -12,7 +12,8 @@ namespace TMRAgent.Discord
         {
             #if DEBUG
             return;
-#endif
+            #endif
+
             try
             {
                 if (ConfigurationHandler.Instance.IsEnabled)

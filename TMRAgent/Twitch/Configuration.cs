@@ -33,7 +33,7 @@ namespace TMRAgent.Twitch
             try
             {
                 #if DEBUG
-                //_configFileName = "twitch_debug.conf";
+                _configFileName = "twitch_debug.conf";
                 #endif
 
                 Load();

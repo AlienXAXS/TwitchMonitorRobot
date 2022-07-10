@@ -18,9 +18,7 @@ namespace TMRAgent
             // Don't throw debug messages at Discord.
             if (logLevel == LogLevel.DEBUG) return;
 
-            // This is awful, I know...
-            if ( !message.StartsWith("Processing Chat Message") && !message.StartsWith("Processing Command Message"))
-                Discord.Handler.SendWebhookMessage($"[{Enum.GetName(logLevel)}] {message}");
+            Discord.Handler.SendWebhookMessage($"[{Enum.GetName(logLevel)}] {message}");
         }
 
         public enum LogLevel

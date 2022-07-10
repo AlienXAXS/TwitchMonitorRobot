@@ -27,6 +27,8 @@ namespace TMRAgent.MySQL.Function
                             .Value(p => p.Start, dateTime)
                             .Value(p => p.LastSeen, DateTime.Now.ToUniversalTime())
                             .InsertWithInt32Identity();
+
+                        Twitch.TwitchHandler.Instance.ProcessStreamOnline();
                     }
                 }
             }
