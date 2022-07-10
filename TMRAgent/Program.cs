@@ -10,7 +10,7 @@ namespace TMRAgent
     {
         private readonly ManualResetEvent _quitAppEvent = new ManualResetEvent(false);
 
-        public static string Version = "0.0.6 Alpha";
+        public static string Version = "0.0.7 Alpha";
 
         static void Main(string[] args)
         {
@@ -71,7 +71,9 @@ namespace TMRAgent
             {
                 ConsoleUtil.WriteToConsole($"Fatal Error: {ex.Message}", ConsoleUtil.LogLevel.ERROR);
             }
-            
+
+            ConsoleUtil.WriteToConsole("Application is ready!", ConsoleUtil.LogLevel.INFO);
+
             _quitAppEvent.WaitOne();
 
             Twitch.TwitchHandler.Instance.Dispose();

@@ -15,7 +15,7 @@ namespace TMRAgent.MySQL.Function
             {
                 using (var db = new DBConnection.Database())
                 {
-                    var currentStream = db.Streams.DefaultIfEmpty(null).FirstOrDefault(x => x.End == default(DateTime) && x.LastSeen.Between(DateTime.Now.ToUniversalTime().AddMinutes(-30), dateTime));
+                    var currentStream = db.Streams.DefaultIfEmpty(null).FirstOrDefault(x => x.End == default(DateTime) && x.LastSeen.Between(DateTime.Now.ToUniversalTime().AddMinutes(-30), DateTime.Now.ToUniversalTime()));
                     if (currentStream != null)
                     {
                         ConsoleUtil.WriteToConsole($"[StreamEvent] Found an existing row in the Database for this ongoing stream, using StreamID {currentStream.Id}.", ConsoleUtil.LogLevel.INFO, ConsoleColor.Yellow);
