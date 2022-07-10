@@ -22,6 +22,7 @@ namespace TMRAgent.Twitch
         public LiveStreamMonitorService liveStreamMonitorService;
 
         public int CurrentLiveStreamId;
+        public DateTime LastUpdateTime;
 
         private readonly ManualResetEvent _quitAppEvent = new ManualResetEvent(false);
 
@@ -51,6 +52,7 @@ namespace TMRAgent.Twitch
 
         private void LiveStreamMonitorService_OnStreamUpdate(object sender, OnStreamUpdateArgs e)
         {
+            TwitchHandler.Instance.CheckForStreamUpdate();
             //ConsoleUtil.WriteToConsole($"Stream {e.Stream.Id} is Updated: {e.Stream.StartedAt} | {e.Stream.Title} | {e.Stream.ViewerCount}", ConsoleUtil.LogLevel.INFO, ConsoleColor.Yellow);
         }
 
@@ -59,6 +61,7 @@ namespace TMRAgent.Twitch
             pubSubClient = new TwitchPubSub();
             pubSubClient.ListenToBitsEventsV2(ConfigurationHandler.Instance.Configuration.PubSubChannelId);
             pubSubClient.ListenToChannelPoints(ConfigurationHandler.Instance.Configuration.PubSubChannelId);
+
 
             pubSubClient.OnPubSubServiceConnected += PubSubClient_OnPubSubServiceConnected;
             pubSubClient.OnBitsReceivedV2 += PubSubClient_OnBitsReceivedV2;
@@ -69,7 +72,10 @@ namespace TMRAgent.Twitch
 
             pubSubClient.OnListenResponse += PubSubClient_OnListenResponse;
 
+            #if RELEASE
             pubSubClient.Connect();
+            #endif
+
             _quitAppEvent.WaitOne();
         }
 

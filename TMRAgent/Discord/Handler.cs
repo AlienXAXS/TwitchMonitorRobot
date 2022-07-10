@@ -1,4 +1,5 @@
 ﻿using JNogueira.Discord.Webhook.Client;
+using System;
 using System.Threading;
 
 namespace TMRAgent.Discord
@@ -9,15 +10,24 @@ namespace TMRAgent.Discord
 
         public static void SendWebhookMessage(string msg)
         {
-            if ( ConfigurationHandler.Instance.IsEnabled )
+            #if DEBUG
+            return;
+#endif
+            try
             {
-                if (_discordWebhookClient == null)
-                    _discordWebhookClient = new DiscordWebhookClient(ConfigurationHandler.Instance.Configuration.WebHookURL);
-
-                new Thread((ThreadStart)async delegate
+                if (ConfigurationHandler.Instance.IsEnabled)
                 {
-                    await _discordWebhookClient.SendToDiscord(new DiscordMessage(msg));
-                }).Start();
+                    if (_discordWebhookClient == null)
+                        _discordWebhookClient = new DiscordWebhookClient(ConfigurationHandler.Instance.Configuration.WebHookURL);
+
+                    new Thread((ThreadStart)async delegate
+                    {
+                        await _discordWebhookClient.SendToDiscord(new DiscordMessage(msg));
+                    }).Start();
+                }
+            } catch (Exception ex)
+            {
+                ConsoleUtil.WriteToConsole($"[DiscordWebHookHandler] {ex.Message}\r\n\r\n{ex.StackTrace}", ConsoleUtil.LogLevel.ERROR, ConsoleColor.Red);
             }
         }
     }

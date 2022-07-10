@@ -36,16 +36,29 @@ namespace TMRAgent.Twitch
             client = new TwitchClient(customClient);
             client.Initialize(credentials, ConfigurationHandler.Instance.Configuration.ChannelName);
 
+            // Log
             client.OnLog += Client_OnLog;
-            client.OnJoinedChannel += Client_OnJoinedChannel;
+
+            //Connectivity & Channel
             client.OnDisconnected += Client_OnDisconnected;
-            client.OnMessageReceived += Client_OnMessageReceived;
-            client.OnNewSubscriber += Client_OnNewSubscriber;
             client.OnConnected += Client_OnConnected;
+            client.OnJoinedChannel += Client_OnJoinedChannel;
+
+            // Stream State
             client.OnChannelStateChanged += ClientOnOnChannelStateChanged;
+
+#if !DEBUG
+            // Messages
+            client.OnMessageReceived += Client_OnMessageReceived;
+
+            // Subscriptions
+            client.OnNewSubscriber += Client_OnNewSubscriber;
             client.OnReSubscriber += ClientOnOnReSubscriber;
-            client.OnRitualNewChatter += Client_OnRitualNewChatter;
             client.OnGiftedSubscription += Client_OnGiftedSubscription;
+
+            // Tests
+            client.OnRitualNewChatter += Client_OnRitualNewChatter;
+#endif
 
             client.Connect();
         }
@@ -65,14 +78,26 @@ namespace TMRAgent.Twitch
             return client;
         }
 
+        public void CheckForStreamUpdate()
+        {
+            if (TwitchLiveMonitor.Instance.CurrentLiveStreamId != -1)
+            {
+                if (TwitchLiveMonitor.Instance.LastUpdateTime < DateTime.Now.ToUniversalTime().AddMinutes(-2))
+                {
+                    MySQL.MySQLHandler.Instance.Streams.ProcessStreamUpdate();
+                    TwitchLiveMonitor.Instance.LastUpdateTime = DateTime.Now.ToUniversalTime();
+                }
+            }
+        }
+
         private void ClientOnOnChannelStateChanged(object? sender, OnChannelStateChangedArgs e)
         {
-            MySQL.MySQLHandler.Instance.Streams.ProcessStreamUpdate();
+            CheckForStreamUpdate();
         }
 
         private void Client_OnLog(object sender, OnLogArgs e)
         {
-            //Console.WriteLine($"{e.DateTime.ToString()}: {e.BotUsername} - {e.Data}");
+            CheckForStreamUpdate();
         }
 
         private void Client_OnConnected(object sender, OnConnectedArgs e)
@@ -88,6 +113,7 @@ namespace TMRAgent.Twitch
 
         private void Client_OnMessageReceived(object sender, OnMessageReceivedArgs e)
         {
+            CheckForStreamUpdate();
 
             if ( e.ChatMessage.Message.StartsWith("!!") )
             {

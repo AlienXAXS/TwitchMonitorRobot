@@ -15,10 +15,10 @@ namespace TMRAgent.MySQL.Function
             {
                 using (var db = new DBConnection.Database())
                 {
-                    var currentStream = db.Streams.DefaultIfEmpty(null).FirstOrDefault(x => x.End == default(DateTime) && x.LastSeen.Between(DateTime.Now.ToUniversalTime().AddMinutes(-30), DateTime.Now.ToUniversalTime()));
+                    var currentStream = db.Streams.DefaultIfEmpty(null).FirstOrDefault(x => x.End.Equals(null) && (x.LastSeen.Between(DateTime.Now.ToUniversalTime().AddMinutes(-30), DateTime.Now.ToUniversalTime()) || x.Start.Equals(dateTime)));
                     if (currentStream != null)
                     {
-                        ConsoleUtil.WriteToConsole($"[StreamEvent] Found an existing row in the Database for this ongoing stream, using StreamID {currentStream.Id}.", ConsoleUtil.LogLevel.INFO, ConsoleColor.Yellow);
+                        ConsoleUtil.WriteToConsole($"[StreamEvent] Found an existing row in the Database for this ongoing stream, using StreamID {currentStream.Id} (Stream Started At {currentStream.Start}).", ConsoleUtil.LogLevel.INFO, ConsoleColor.Yellow);
                         Twitch.TwitchLiveMonitor.Instance.CurrentLiveStreamId = currentStream.Id;
                     }
                     else
