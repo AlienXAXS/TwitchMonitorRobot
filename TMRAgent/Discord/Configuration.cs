@@ -7,9 +7,10 @@ using Newtonsoft.Json;
 
 namespace TMRAgent.Discord
 {
-    internal class Configuration
+    [Serializable]
+    public class Configuration
     {
-        public string WebHookURL { get; set; }
+        public string? WebHookURL { get; set; }
     }
 
     internal class ConfigurationHandler
@@ -22,7 +23,6 @@ namespace TMRAgent.Discord
         public Configuration Configuration = new Configuration();
         public bool IsEnabled = false;
 
-
         public ConfigurationHandler()
         {
             Load();
@@ -32,8 +32,12 @@ namespace TMRAgent.Discord
         {
             if (System.IO.File.Exists(_configFileName))
             {
-                Configuration = JsonConvert.DeserializeObject<Configuration>(_configFileName);
+                Configuration = JsonConvert.DeserializeObject<Configuration>(System.IO.File.ReadAllText(_configFileName));
                 IsEnabled = Configuration.WebHookURL != null;
+            }
+            else
+            {
+                System.IO.File.WriteAllText(_configFileName, JsonConvert.SerializeObject(Configuration));
             }
         }
     }
