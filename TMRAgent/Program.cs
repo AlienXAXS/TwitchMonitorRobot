@@ -26,7 +26,7 @@ namespace TMRAgent
             AppDomain.CurrentDomain.ProcessExit += (sender, args) => HandleApplicationExitEvent();
             Console.CancelKeyPress += (sender, args) => HandleApplicationExitEvent();
 
-            ConsoleUtil.WriteToConsole($"Twitch Management Robot Starting...", ConsoleUtil.LogLevel.INFO);
+            ConsoleUtil.WriteToConsole($"Twitch Management Robot v{Version} Starting...", ConsoleUtil.LogLevel.INFO);
 
             if ( !Twitch.ConfigurationHandler.Instance.IsConfigurationGood() )
             {
