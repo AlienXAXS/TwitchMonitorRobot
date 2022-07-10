@@ -12,12 +12,12 @@ namespace TMRAgent.MySQL.Function
             {
                 var intUserId = int.Parse(UserId);
                 var intGiftUserId = -1;
-                var GiftUserDBIndex = -1;
+                int? GiftUserDBIndex = new int();
 
                 if (GiftUserId != "")
                 {
                     intGiftUserId = int.Parse(GiftUserId);
-                    GiftUserDBIndex = MySQLHandler.Instance.Users.GetUserId(GiftUserName, intGiftUserId);
+                    GiftUserDBIndex = MySQLHandler.Instance.Users.GetUserId(intGiftUserId);
                 }
 
                 var UserIdDBIndex = MySQLHandler.Instance.Users.GetUserId(Username, intUserId);
@@ -31,14 +31,13 @@ namespace TMRAgent.MySQL.Function
                         .Value(p => p.IsPrime, IsPrime)
                         .Value(p => p.IsGift, IsGift);
 
-                    if ( IsGift )
+                    if ( IsGift && GiftUserDBIndex.HasValue )
                     {
-                        dbInsert.Value(p => p.GiftFromUserId, GiftUserDBIndex);
+                        dbInsert.Value(p => p.GiftFromUserId, GiftUserDBIndex.Value);
                     }
 
                     dbInsert.Insert();
                 }
-
 
             } catch (Exception ex)
             {

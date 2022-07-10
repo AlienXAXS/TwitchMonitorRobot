@@ -1,10 +1,7 @@
 ﻿using LinqToDB;
-using LinqToDB.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TMRAgent.MySQL.Function
 {
@@ -51,6 +48,30 @@ namespace TMRAgent.MySQL.Function
             catch (Exception ex)
             {
                 throw new Exception($"Unable to get User ID in Database for user {Username}\r\n\r\nError: {ex.Message}");
+            }
+
+            return userId;
+        }
+
+        public int? GetUserId(int TwitchUserId)
+        {
+            int? userId = null;
+
+            try
+            {
+                using (var db = new DBConnection.Database())
+                {
+                    var user = db.Users.Where(u => u.TwitchId == TwitchUserId);
+                    if (user.Any())
+                    {
+                        userId = user.First().Id;
+                    }
+                    else return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unable to get User ID in Database for user {TwitchUserId}\r\n\r\nError: {ex.Message}");
             }
 
             return userId;
