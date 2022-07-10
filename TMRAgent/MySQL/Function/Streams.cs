@@ -15,7 +15,7 @@ namespace TMRAgent.MySQL.Function
             {
                 using (var db = new DBConnection.Database())
                 {
-                    var currentStream = db.Streams.DefaultIfEmpty(null).FirstOrDefault(x => x.Start == dateTime);
+                    var currentStream = db.Streams.DefaultIfEmpty(null).FirstOrDefault(x => x.End == default(DateTime) && x.LastSeen.Between(DateTime.Now.ToUniversalTime().AddMinutes(-30), dateTime));
                     if (currentStream != null)
                     {
                         ConsoleUtil.WriteToConsole($"[StreamEvent] Found an existing row in the Database for this ongoing stream, using StreamID {currentStream.Id}.", ConsoleUtil.LogLevel.INFO, ConsoleColor.Yellow);
@@ -25,6 +25,7 @@ namespace TMRAgent.MySQL.Function
                     {
                         Twitch.TwitchLiveMonitor.Instance.CurrentLiveStreamId = (int)db.Streams
                             .Value(p => p.Start, dateTime)
+                            .Value(p => p.LastSeen, DateTime.Now.ToUniversalTime())
                             .InsertWithInt32Identity();
                     }
                 }
@@ -32,6 +33,18 @@ namespace TMRAgent.MySQL.Function
             catch (Exception ex)
             {
                 throw new Exception($"Unable to add current stream as being Online\r\n\r\n{ex.Message}");
+            }
+        }
+
+        internal void ProcessStreamUpdate()
+        {
+            if (Twitch.TwitchLiveMonitor.Instance.CurrentLiveStreamId == -1) return;
+
+            using (var db = new DBConnection.Database())
+            {
+                db.Streams.Where(p => p.Id == Twitch.TwitchLiveMonitor.Instance.CurrentLiveStreamId)
+                    .Set(p => p.LastSeen, DateTime.Now.ToUniversalTime())
+                    .Update();
             }
         }
 
@@ -52,6 +65,8 @@ namespace TMRAgent.MySQL.Function
                         .Set(p => p.Viewers, Viewers)
                         .Update();
                 }
+
+                Twitch.TwitchLiveMonitor.Instance.CurrentLiveStreamId = -1;
             }
             catch (Exception ex)
             {

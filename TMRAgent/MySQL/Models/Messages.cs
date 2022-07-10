@@ -17,5 +17,8 @@ namespace TMRAgent.MySQL.Models
 
         [Column(Name = "message"), NotNull]
         public string Message { get; set; }
+
+        [Column(Name = "bits"), Nullable]
+        public int Bits { get; set; }
     }
 }

@@ -9,7 +9,7 @@ namespace TMRAgent.MySQL.Function
 {
     internal class Messages 
     {
-        public void ProcessChatMessage(string Username, int TwitchUserId, bool IsModerator, string Message)
+        public void ProcessChatMessage(string Username, int TwitchUserId, bool IsModerator, string Message, int Bits)
         {
             int userId;
             try
@@ -30,6 +30,7 @@ namespace TMRAgent.MySQL.Function
                         .Value(p => p.UserId, userId)
                         .Value(p => p.Date, DateTime.Now.ToUniversalTime())
                         .Value(p => p.Message, Message)
+                        .Value(p => p.Bits, Bits)
                         .Insert();
                 }
             }

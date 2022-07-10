@@ -122,12 +122,14 @@ namespace TMRAgent.Twitch
             ConsoleUtil.WriteToConsole("[StreamEvent] Stream is now marked as Offline, uploading stats to Database.", ConsoleUtil.LogLevel.INFO, ConsoleColor.Yellow);
             MySQL.MySQLHandler.Instance.Streams.ProcessStreamOffline(DateTime.Now.ToUniversalTime(), e.Stream.ViewerCount);
             CurrentLiveStreamId = -1;
+            TwitchHandler.Instance.ProcessStreamOffline();
         }
 
         private void LiveStreamMonitorService_OnStreamOnline(object sender, OnStreamOnlineArgs e)
         {
             ConsoleUtil.WriteToConsole("[StreamEvent] Stream is now marked as Online, creating new Database entry.", ConsoleUtil.LogLevel.INFO, ConsoleColor.Yellow);
             MySQL.MySQLHandler.Instance.Streams.ProcessStreamOnline(e.Stream.StartedAt);
+            TwitchHandler.Instance.ProcessStreamOnline();
         }
 
         public void Dispose()

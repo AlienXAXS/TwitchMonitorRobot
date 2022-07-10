@@ -4,11 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using LinqToDB;
-using LinqToDB.Common;
 using TwitchLib.Client;
 using TwitchLib.Client.Enums;
 using TwitchLib.Client.Events;
-using TwitchLib.Client.Extensions;
 using TwitchLib.Client.Models;
 using TwitchLib.Communication.Clients;
 using TwitchLib.Communication.Models;
@@ -40,22 +38,21 @@ namespace TMRAgent.Twitch
 
             client.OnLog += Client_OnLog;
             client.OnJoinedChannel += Client_OnJoinedChannel;
+            client.OnDisconnected += Client_OnDisconnected;
             client.OnMessageReceived += Client_OnMessageReceived;
-            client.OnWhisperReceived += Client_OnWhisperReceived;
             client.OnNewSubscriber += Client_OnNewSubscriber;
             client.OnConnected += Client_OnConnected;
             client.OnChannelStateChanged += ClientOnOnChannelStateChanged;
             client.OnReSubscriber += ClientOnOnReSubscriber;
-            client.OnModeratorsReceived += ClientOnOnModeratorsReceived;
             client.OnRitualNewChatter += Client_OnRitualNewChatter;
             client.OnGiftedSubscription += Client_OnGiftedSubscription;
 
             client.Connect();
         }
 
-        private void Client_OnGiftedSubscription(object sender, OnGiftedSubscriptionArgs e)
+        private void Client_OnDisconnected(object sender, TwitchLib.Communication.Events.OnDisconnectedEventArgs e)
         {
-            ConsoleUtil.WriteToConsole($"[GiftSubEvent] {e.GiftedSubscription.DisplayName} gifted {e.GiftedSubscription.MsgParamRecipientUserName} a sub!", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
+            ConsoleUtil.WriteToConsole($"[TwitchClient] Disconnection! {e}", ConsoleUtil.LogLevel.ERROR, ConsoleColor.Red);
         }
 
         private void Client_OnRitualNewChatter(object sender, OnRitualNewChatterArgs e)
@@ -68,14 +65,9 @@ namespace TMRAgent.Twitch
             return client;
         }
 
-        private void ClientOnOnModeratorsReceived(object? sender, OnModeratorsReceivedArgs e)
-        {
-            
-        }
-
         private void ClientOnOnChannelStateChanged(object? sender, OnChannelStateChangedArgs e)
         {
-            
+            MySQL.MySQLHandler.Instance.Streams.ProcessStreamUpdate();
         }
 
         private void Client_OnLog(object sender, OnLogArgs e)
@@ -119,7 +111,7 @@ namespace TMRAgent.Twitch
                     ConsoleUtil.LogLevel.INFO);
 
                 MySQL.MySQLHandler.Instance.Messages.ProcessChatMessage(e.ChatMessage.Username, int.Parse(e.ChatMessage.UserId), e.ChatMessage.IsModerator,
-                    e.ChatMessage.Message);
+                    e.ChatMessage.Message, e.ChatMessage.Bits);
 
                 if (e.ChatMessage.Bits > 0)
                 {
@@ -191,55 +183,41 @@ namespace TMRAgent.Twitch
             }
         }
 
-        private void Client_OnWhisperReceived(object sender, OnWhisperReceivedArgs e)
-        {
-        }
-
         private void Client_OnNewSubscriber(object sender, OnNewSubscriberArgs e)
         {
             if (e.Subscriber.SubscriptionPlan == SubscriptionPlan.Prime)
             {
                 ConsoleUtil.WriteToConsole($"[SubDetector] User {e.Subscriber.DisplayName} New Prime Sub!", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
-                ProcessResubReply(e.Subscriber.DisplayName, true);
+                MySQL.MySQLHandler.Instance.Subscriptions.ProcessSubscription(e.Subscriber.DisplayName, e.Subscriber.UserId, false, e.Subscriber.SubscriptionPlan == SubscriptionPlan.Prime);
             }
             else
             {
                 ConsoleUtil.WriteToConsole($"[SubDetector] User {e.Subscriber.DisplayName} New Sub!", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
-                ProcessResubReply(e.Subscriber.DisplayName, false);
             }
         }
 
         private void ClientOnOnReSubscriber(object? sender, OnReSubscriberArgs e)
         {
             ConsoleUtil.WriteToConsole($"[SubDetector] User {e.ReSubscriber.DisplayName} Resubbed!", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
-            ProcessResubReply(e.ReSubscriber.DisplayName, e.ReSubscriber.SubscriptionPlan == SubscriptionPlan.Prime);
+            MySQL.MySQLHandler.Instance.Subscriptions.ProcessSubscription(e.ReSubscriber.DisplayName, e.ReSubscriber.UserId, true, e.ReSubscriber.SubscriptionPlan == SubscriptionPlan.Prime);
         }
 
-        private void ProcessResubReply(string DisplayName, bool isPrime = false, bool isReSub = false)
+        private void Client_OnGiftedSubscription(object sender, OnGiftedSubscriptionArgs e)
         {
-            var rnd = new Random(DateTime.Now.Millisecond);
-            if (rnd.Next(1, 3) == 1)
-            {
-                if (isPrime)
-                {
-                    client.SendMessage(ConfigurationHandler.Instance.Configuration.ChannelName, $"@{DisplayName} Thanks for the prime sub!!!");
-                }
-                else
-                {
-                    client.SendMessage(ConfigurationHandler.Instance.Configuration.ChannelName, $"@{DisplayName} Thanks for the sub!!!");
-                }
-            }
-            else
-            {
-                if (isPrime)
-                {
-                    client.SendMessage(ConfigurationHandler.Instance.Configuration.ChannelName, $"!handsup @{DisplayName} Thanks for the prime sub!!!");
-                }
-                else
-                {
-                    client.SendMessage(ConfigurationHandler.Instance.Configuration.ChannelName, $"!handsup @{DisplayName} Thanks for the sub!!!");
-                }
-            }
+            ConsoleUtil.WriteToConsole($"[GiftSubEvent] {e.GiftedSubscription.DisplayName} gifted {e.GiftedSubscription.MsgParamRecipientUserName} a sub!", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
+            MySQL.MySQLHandler.Instance.Subscriptions.ProcessSubscription(e.GiftedSubscription.MsgParamRecipientDisplayName, e.GiftedSubscription.MsgParamRecipientId, false, false, true, e.GiftedSubscription.UserId);
+        }
+
+        public void ProcessStreamOnline()
+        {
+            if (!client.IsConnected) return;
+            client.SendMessage(ConfigurationHandler.Instance.Configuration.ChannelName, $"[BOT] Stream Started - Monitoring Chat and Bit Events.");
+        }
+
+        public void ProcessStreamOffline()
+        {
+            if (!client.IsConnected) return;
+            client.SendMessage(ConfigurationHandler.Instance.Configuration.ChannelName, $"[BOT] Stream Ended - Disabling Chat and Bit Event Hooks.");
         }
 
         public void Dispose()

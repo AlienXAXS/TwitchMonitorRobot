@@ -18,5 +18,6 @@ namespace TMRAgent.MySQL.DBConnection
         public ITable<Models.Streams> Streams => this.GetTable<Models.Streams>();
         public ITable<Models.BitRedeems> BitRedeems => this.GetTable<Models.BitRedeems>();
         public ITable<Models.ModCommands> ModCommands => this.GetTable<Models.ModCommands>();
+        public ITable<Models.Subscriptions> Subscriptions => this.GetTable<Models.Subscriptions>();
     }
 }

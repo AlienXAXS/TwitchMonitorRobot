@@ -12,6 +12,7 @@ namespace TMRAgent.MySQL
         public Function.Streams Streams = new Function.Streams();
         public Function.Users Users = new Function.Users();
         public Function.Commands Commands = new Function.Commands();
+        public Function.Subscriptions Subscriptions = new Function.Subscriptions();
 
         public void Connect()
         {

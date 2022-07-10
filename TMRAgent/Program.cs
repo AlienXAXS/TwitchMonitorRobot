@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using LinqToDB.Data;
+using System.Linq;
 
 namespace TMRAgent
 {
@@ -9,7 +10,7 @@ namespace TMRAgent
     {
         private readonly ManualResetEvent _quitAppEvent = new ManualResetEvent(false);
 
-        public static string Version = "0.0.5 Alpha";
+        public static string Version = "0.0.6 Alpha";
 
         static void Main(string[] args)
         {
