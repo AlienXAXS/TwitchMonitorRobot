@@ -23,6 +23,7 @@ namespace TMRAgent.Twitch
         private MySQL.Commands.AddModeratorCommand _addModeratorCommand = new MySQL.Commands.AddModeratorCommand();
         private MySQL.Commands.RemoveModeratorCommand _removeModeratorCommand = new MySQL.Commands.RemoveModeratorCommand();
         private MySQL.Commands.TopCommand _topCommand = new MySQL.Commands.TopCommand();
+        private MySQL.Commands.UserStatsCommand _userStatsCommand = new MySQL.Commands.UserStatsCommand();
 
         public void Connect()
         {
@@ -47,10 +48,9 @@ namespace TMRAgent.Twitch
             // Stream State
             client.OnChannelStateChanged += ClientOnOnChannelStateChanged;
 
-#if !DEBUG
             // Messages
             client.OnMessageReceived += Client_OnMessageReceived;
-
+#if !DEBUG
             // Subscriptions
             client.OnNewSubscriber += Client_OnNewSubscriber;
             client.OnReSubscriber += ClientOnOnReSubscriber;
@@ -122,27 +122,13 @@ namespace TMRAgent.Twitch
             }
             if (e.ChatMessage.Message.StartsWith("!"))
             {
-                ConsoleUtil.WriteToConsole(
-                    $"Processing Command Message from {e.ChatMessage.Username} [{e.ChatMessage.Message}]",
-                    ConsoleUtil.LogLevel.INFO);
-
                 MySQL.MySQLHandler.Instance.Commands.ProcessCommandMessage(e.ChatMessage.Username, int.Parse(e.ChatMessage.UserId), e.ChatMessage.IsModerator,
                     e.ChatMessage.Message);
             }
             else
             {
-
-                ConsoleUtil.WriteToConsole(
-                    $"Processing Chat Message from {e.ChatMessage.Username} [{e.ChatMessage.Message}]",
-                    ConsoleUtil.LogLevel.INFO);
-
                 MySQL.MySQLHandler.Instance.Messages.ProcessChatMessage(e.ChatMessage.Username, int.Parse(e.ChatMessage.UserId), e.ChatMessage.IsModerator,
                     e.ChatMessage.Message, e.ChatMessage.Bits);
-
-                if (e.ChatMessage.Bits > 0)
-                {
-                    ConsoleUtil.WriteToConsole($"User {e.ChatMessage.Username} sent {e.ChatMessage.Bits} bits with their message", ConsoleUtil.LogLevel.INFO, ConsoleColor.Green);
-                }
             }
         }
 
@@ -168,6 +154,10 @@ namespace TMRAgent.Twitch
                         var walls = db.Messages.Where(x => x.Message.ToLower().Contains("wall") && !x.Message.StartsWith("Stats")).Count();
                         client.SendMessage(chatMessage.Channel, $"Stats: At least {walls} messages have been sent describing how much @Mind1 shoots walls - GO MIND!");
                     }
+                    break;
+
+                case "!!stats":
+                    _userStatsCommand.Handle(chatMessage, parameters);
                     break;
 
                 case "!!dead":
@@ -211,27 +201,17 @@ namespace TMRAgent.Twitch
 
         private void Client_OnNewSubscriber(object sender, OnNewSubscriberArgs e)
         {
-            if (e.Subscriber.SubscriptionPlan == SubscriptionPlan.Prime)
-            {
-                ConsoleUtil.WriteToConsole($"[SubDetector] User {e.Subscriber.DisplayName} New Prime Sub!", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
-                MySQL.MySQLHandler.Instance.Subscriptions.ProcessSubscription(e.Subscriber.DisplayName, e.Subscriber.UserId, false, e.Subscriber.SubscriptionPlan == SubscriptionPlan.Prime);
-            }
-            else
-            {
-                ConsoleUtil.WriteToConsole($"[SubDetector] User {e.Subscriber.DisplayName} New Sub!", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
-            }
+            MySQL.MySQLHandler.Instance.Subscriptions.ProcessSubscription(e.Subscriber.DisplayName, e.Subscriber.UserId, false, e.Subscriber.SubscriptionPlan == SubscriptionPlan.Prime);
         }
 
         private void ClientOnOnReSubscriber(object? sender, OnReSubscriberArgs e)
         {
-            ConsoleUtil.WriteToConsole($"[SubDetector] User {e.ReSubscriber.DisplayName} Resubbed!", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
             MySQL.MySQLHandler.Instance.Subscriptions.ProcessSubscription(e.ReSubscriber.DisplayName, e.ReSubscriber.UserId, true, e.ReSubscriber.SubscriptionPlan == SubscriptionPlan.Prime);
         }
 
         private void Client_OnGiftedSubscription(object sender, OnGiftedSubscriptionArgs e)
         {
-            ConsoleUtil.WriteToConsole($"[GiftSubEvent] {e.GiftedSubscription.DisplayName} gifted {e.GiftedSubscription.MsgParamRecipientUserName} a sub!", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
-            MySQL.MySQLHandler.Instance.Subscriptions.ProcessSubscription(e.GiftedSubscription.MsgParamRecipientDisplayName, e.GiftedSubscription.MsgParamRecipientId, false, false, true, e.GiftedSubscription.UserId);
+            MySQL.MySQLHandler.Instance.Subscriptions.ProcessSubscription(e.GiftedSubscription.MsgParamRecipientDisplayName, e.GiftedSubscription.MsgParamRecipientId, false, false, true, e.GiftedSubscription.DisplayName, e.GiftedSubscription.UserId);
         }
 
         public void ProcessStreamOnline()
