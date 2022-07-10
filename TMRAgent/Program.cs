@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using LinqToDB.Data;
-using System.Linq;
 
 namespace TMRAgent
 {

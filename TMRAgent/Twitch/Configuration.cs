@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Reflection.Metadata;
-using System.Text;
-using LinqToDB.Common;
 using Newtonsoft.Json;
 
 namespace TMRAgent.Twitch
