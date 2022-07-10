@@ -16,8 +16,8 @@ namespace TMRAgent
             Console.WriteLine($"[{dtNow.Year:####}-{dtNow.Month:0#}-{dtNow.Day:0#} {dtNow.Hour:0#}:{dtNow.Minute:0#}:{dtNow.Second:0#}-{logLevel}] {message}");
 
             // This is awful, I know...
-            if ( !message.StartsWith("Processing Chat Message") )
-                Discord.Handler.SendWebhookMessage(message);
+            if ( !message.StartsWith("Processing Chat Message") && !message.StartsWith("Processing Command Message"))
+                Discord.Handler.SendWebhookMessage($"[{Enum.GetName(logLevel)}] {message}");
         }
 
         public enum LogLevel
