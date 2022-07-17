@@ -39,7 +39,6 @@ namespace TMRAgent
                 ShutdownApp();
             }
 
-            return;
             ConnectTwitchChat();
 
             SetupMySqlBackend();
