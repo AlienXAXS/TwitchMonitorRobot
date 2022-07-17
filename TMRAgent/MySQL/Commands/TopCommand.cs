@@ -34,7 +34,7 @@ namespace TMRAgent.MySQL.Commands
 
                                     returnMsg = returnMsg.Substring(0, returnMsg.Length - 2).Trim();
 
-                                    tc.SendMessage(Twitch.ConfigurationHandler.Instance.Configuration.ChannelName, returnMsg);
+                                    tc.SendMessage(Twitch.ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName, returnMsg);
                                 };
                             }
                             break;
@@ -46,7 +46,7 @@ namespace TMRAgent.MySQL.Commands
                 }
             } catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"[Error] TopCommand.Handle: {ex.Message}", ConsoleUtil.LogLevel.ERROR, ConsoleColor.Red);
+                ConsoleUtil.WriteToConsole($"[Error] TopCommand.Handle: {ex.Message}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
             }
         }
     }

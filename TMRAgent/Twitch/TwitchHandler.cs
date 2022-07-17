@@ -1,7 +1,7 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Linq;
 using System.Threading;
-using LinqToDB;
 using TwitchLib.Client;
 using TwitchLib.Client.Enums;
 using TwitchLib.Client.Events;
@@ -16,38 +16,47 @@ namespace TMRAgent.Twitch
         public static TwitchHandler Instance = _instance ??= new TwitchHandler();
         private static readonly TwitchHandler? _instance;
 
-        private TwitchClient client;
+        private TwitchClient? _client;
 
         private MySQL.Commands.AddModeratorCommand _addModeratorCommand = new MySQL.Commands.AddModeratorCommand();
         private MySQL.Commands.RemoveModeratorCommand _removeModeratorCommand = new MySQL.Commands.RemoveModeratorCommand();
         private MySQL.Commands.TopCommand _topCommand = new MySQL.Commands.TopCommand();
         private MySQL.Commands.UserStatsCommand _userStatsCommand = new MySQL.Commands.UserStatsCommand();
 
+        public Auth Auth = new Auth();
+
         public void Connect()
         {
-            ConnectionCredentials credentials = new ConnectionCredentials(ConfigurationHandler.Instance.Configuration.Username , ConfigurationHandler.Instance.Configuration.AuthToken);
+            ConnectionCredentials credentials = new ConnectionCredentials(ConfigurationHandler.Instance.Configuration.TwitchChat.Username , ConfigurationHandler.Instance.Configuration.TwitchChat.AuthToken);
             var clientOptions = new ClientOptions
             {
                 MessagesAllowedInPeriod = 750,
                 ThrottlingPeriod = TimeSpan.FromSeconds(30)
             };
             WebSocketClient customClient = new WebSocketClient(clientOptions);
-            client = new TwitchClient(customClient);
-            client.Initialize(credentials, ConfigurationHandler.Instance.Configuration.ChannelName);
+            _client = new TwitchClient(customClient);
+            _client.Initialize(credentials, ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName);
 
             // Log
-            client.OnLog += Client_OnLog;
+            _client.OnLog += Client_OnLog!;
+            _client.OnConnectionError += ClientOnOnConnectionError;
+            _client.OnFailureToReceiveJoinConfirmation += ClientOnOnFailureToReceiveJoinConfirmation;
+
+            // Auth Issues
+            _client.OnIncorrectLogin += ClientOnOnIncorrectLogin;
 
             //Connectivity & Channel
-            client.OnDisconnected += Client_OnDisconnected;
-            client.OnConnected += Client_OnConnected;
-            client.OnJoinedChannel += Client_OnJoinedChannel;
+            _client.OnDisconnected += Client_OnDisconnected;
+            _client.OnConnected += Client_OnConnected;
+            _client.OnJoinedChannel += Client_OnJoinedChannel;
+
+            _client.OnNoPermissionError += ClientOnOnNoPermissionError;
 
             // Stream State
-            client.OnChannelStateChanged += ClientOnOnChannelStateChanged;
+            _client.OnChannelStateChanged += ClientOnOnChannelStateChanged;
 
             // Messages
-            client.OnMessageReceived += Client_OnMessageReceived;
+            _client.OnMessageReceived += Client_OnMessageReceived;
 #if !DEBUG
             // Subscriptions
             client.OnNewSubscriber += Client_OnNewSubscriber;
@@ -58,22 +67,60 @@ namespace TMRAgent.Twitch
             client.OnRitualNewChatter += Client_OnRitualNewChatter;
 #endif
 
-            client.Connect();
+            _client.Connect();
         }
 
-        private void Client_OnDisconnected(object sender, TwitchLib.Communication.Events.OnDisconnectedEventArgs e)
+        private void ClientOnOnIncorrectLogin(object? sender, OnIncorrectLoginArgs e)
         {
-            ConsoleUtil.WriteToConsole($"[TwitchClient] Disconnection! {e}", ConsoleUtil.LogLevel.ERROR, ConsoleColor.Red);
+            if (_client == null) return;
+
+            ConsoleUtil.WriteToConsole($"[TwitchChat] Invalid/Expired Auth Credentials", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+            _client.Disconnect();
+
+            if (!Auth.TestAuth(Auth.AuthType.TwitchChat))
+            {
+                ConsoleUtil.WriteToConsole("[TwitchChat] Attemtping a token refresh", ConsoleUtil.LogLevel.Info);
+                if (Auth.RefreshToken(Auth.AuthType.TwitchChat).GetAwaiter().GetResult())
+                {
+                    ConsoleUtil.WriteToConsole($"[TwitchChat] Token refresh successful, reconnecting to TwitchChat", ConsoleUtil.LogLevel.Info);
+                    Connect();
+                }
+                else
+                {
+                    ConsoleUtil.WriteToConsole("[TwitchChat] Unable to refresh TwitchChat Token, Application will now exit.", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+                    Program.QuitAppEvent.Set();
+                }
+            }
         }
 
-        private void Client_OnRitualNewChatter(object sender, OnRitualNewChatterArgs e)
+        private void ClientOnOnFailureToReceiveJoinConfirmation(object? sender, OnFailureToReceiveJoinConfirmationArgs e)
         {
-            ConsoleUtil.WriteToConsole($"Possible First Time Chatter: {e.RitualNewChatter.DisplayName}", ConsoleUtil.LogLevel.INFO, ConsoleColor.Cyan);
+            ConsoleUtil.WriteToConsole($"[TwitchClient] Failed to join channel {e.Exception.Channel}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
         }
 
-        public TwitchClient GetTwitchClient()
+        private void ClientOnOnConnectionError(object? sender, OnConnectionErrorArgs e)
         {
-            return client;
+            
+        }
+
+        private void ClientOnOnNoPermissionError(object? sender, EventArgs e)
+        {
+            
+        }
+
+        private void Client_OnDisconnected(object? sender, TwitchLib.Communication.Events.OnDisconnectedEventArgs e)
+        {
+            ConsoleUtil.WriteToConsole($"[TwitchClient] Disconnection! {e}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+        }
+
+        private void Client_OnRitualNewChatter(object? sender, OnRitualNewChatterArgs e)
+        {
+            ConsoleUtil.WriteToConsole($"Possible First Time Chatter: {e.RitualNewChatter.DisplayName}", ConsoleUtil.LogLevel.Info, ConsoleColor.Cyan);
+        }
+
+        public TwitchClient? GetTwitchClient()
+        {
+            return _client;
         }
 
         public void CheckForStreamUpdate()
@@ -82,7 +129,7 @@ namespace TMRAgent.Twitch
             {
                 if (TwitchLiveMonitor.Instance.LastUpdateTime < DateTime.Now.ToUniversalTime().AddMinutes(-2))
                 {
-                    MySQL.MySQLHandler.Instance.Streams.ProcessStreamUpdate();
+                    MySQL.MySqlHandler.Instance.Streams.ProcessStreamUpdate();
                     TwitchLiveMonitor.Instance.LastUpdateTime = DateTime.Now.ToUniversalTime();
                 }
             }
@@ -93,23 +140,23 @@ namespace TMRAgent.Twitch
             CheckForStreamUpdate();
         }
 
-        private void Client_OnLog(object sender, OnLogArgs e)
+        private void Client_OnLog(object? sender, OnLogArgs e)
         {
             CheckForStreamUpdate();
         }
 
-        private void Client_OnConnected(object sender, OnConnectedArgs e)
+        private void Client_OnConnected(object? sender, OnConnectedArgs e)
         {
-            ConsoleUtil.WriteToConsole($"[Twitch Bot] Connected to Twitch IRC", ConsoleUtil.LogLevel.INFO);
+            ConsoleUtil.WriteToConsole($"[Twitch Bot] Connected to Twitch IRC", ConsoleUtil.LogLevel.Info);
         }
 
-        private void Client_OnJoinedChannel(object sender, OnJoinedChannelArgs e)
+        private void Client_OnJoinedChannel(object? sender, OnJoinedChannelArgs e)
         {
-            ConsoleUtil.WriteToConsole($"[Twitch Bot] Joined channel {e.Channel}", ConsoleUtil.LogLevel.INFO);
+            ConsoleUtil.WriteToConsole($"[Twitch Bot] Joined channel {e.Channel}", ConsoleUtil.LogLevel.Info);
             
         }
 
-        private void Client_OnMessageReceived(object sender, OnMessageReceivedArgs e)
+        private void Client_OnMessageReceived(object? sender, OnMessageReceivedArgs e)
         {
             CheckForStreamUpdate();
 
@@ -120,18 +167,20 @@ namespace TMRAgent.Twitch
             }
             if (e.ChatMessage.Message.StartsWith("!"))
             {
-                MySQL.MySQLHandler.Instance.Commands.ProcessCommandMessage(e.ChatMessage.Username, int.Parse(e.ChatMessage.UserId), e.ChatMessage.IsModerator,
+                MySQL.MySqlHandler.Instance.Commands.ProcessCommandMessage(e.ChatMessage.Username, int.Parse(e.ChatMessage.UserId), e.ChatMessage.IsModerator,
                     e.ChatMessage.Message);
             }
             else
             {
-                MySQL.MySQLHandler.Instance.Messages.ProcessChatMessage(e.ChatMessage.Username, int.Parse(e.ChatMessage.UserId), e.ChatMessage.IsModerator,
+                MySQL.MySqlHandler.Instance.Messages.ProcessChatMessage(e.ChatMessage.Username, int.Parse(e.ChatMessage.UserId), e.ChatMessage.IsModerator,
                     e.ChatMessage.Message, e.ChatMessage.Bits);
             }
         }
 
         private void ProcessChatCommandMessage(ChatMessage chatMessage)
         {
+            if (_client == null) return;
+
             var parameters = chatMessage.Message.Split(' ', 2);
 
             switch (parameters[0].ToLower())
@@ -149,8 +198,8 @@ namespace TMRAgent.Twitch
                 case "!!walls":
                     using (var db = new MySQL.DBConnection.Database())
                     {
-                        var walls = db.Messages.Where(x => x.Message.ToLower().Contains("wall") && !x.Message.StartsWith("Stats")).Count();
-                        client.SendMessage(chatMessage.Channel, $"Stats: At least {walls} messages have been sent describing how much @Mind1 shoots walls - GO MIND!");
+                        var walls = db.Messages.Count(x => x.Message.ToLower().Contains("wall") && !x.Message.StartsWith("Stats"));
+                        _client.SendMessage(chatMessage.Channel, $"Stats: At least {walls} messages have been sent describing how much @Mind1 shoots walls - GO MIND!");
                     }
                     break;
 
@@ -162,16 +211,16 @@ namespace TMRAgent.Twitch
                     using ( var db = new MySQL.DBConnection.Database())
                     {
                         var deadCmds = db.Commands.Where(x => x.Command.ToLower().Equals("!dead"));
-                        client.SendMessage(chatMessage.Channel, $"Stats: Mind1 has died at least {deadCmds.Count()} times - Ouch! (num of !dead used)");
+                        _client.SendMessage(chatMessage.Channel, $"Stats: Mind1 has died at least {deadCmds.Count()} times - Ouch! (num of !dead used)");
                     }
                     break;
 
                 case "!!about":
                     using ( var db = new MySQL.DBConnection.Database() )
                     {
-                        var TotalUsers = db.Users.Count();
-                        var TotalMessages = db.Messages.Count();
-                        client.SendMessage(chatMessage.Channel, $"I am Twitch Monitor Robot v{Program.Version} - I am logging everything that happens here.  Currently watching {TotalUsers:n0} users having sent {TotalMessages:n0} chat messages! - Created by AlienX");
+                        var totalUsers = db.Users.Count();
+                        var totalMessages = db.Messages.Count();
+                        _client.SendMessage(chatMessage.Channel, $"I am Twitch Monitor Robot v{Program.Version} - I am logging everything that happens here.  Currently watching {totalUsers:n0} users having sent {totalMessages:n0} chat messages! - Created by AlienX");
                     }
                     break;
 
@@ -180,7 +229,7 @@ namespace TMRAgent.Twitch
                     break;
 
                 case "!!help":
-                    client.SendMessage(chatMessage.Channel, $"Commands are: !!top [redeem], !!about, !!help (more added soon!)");
+                    _client.SendMessage(chatMessage.Channel, $"Commands are: !!top [redeem], !!about, !!help (more added soon!)");
                     break;
             }
         }
@@ -192,57 +241,60 @@ namespace TMRAgent.Twitch
                 return true;
             } else
             {
-                client.SendMessage(chatMessage.Channel, $"Sorry {chatMessage.Username}, you do not have access to that command");
+                _client!.SendMessage(chatMessage.Channel, $"Sorry {chatMessage.Username}, you do not have access to that command");
                 return false;
             }
         }
 
         private void Client_OnNewSubscriber(object sender, OnNewSubscriberArgs e)
         {
-            MySQL.MySQLHandler.Instance.Subscriptions.ProcessSubscription(e.Subscriber.DisplayName, e.Subscriber.UserId, false, e.Subscriber.SubscriptionPlan == SubscriptionPlan.Prime);
+            MySQL.MySqlHandler.Instance.Subscriptions.ProcessSubscription(e.Subscriber.DisplayName, e.Subscriber.UserId, false, e.Subscriber.SubscriptionPlan == SubscriptionPlan.Prime);
         }
 
         private void ClientOnOnReSubscriber(object? sender, OnReSubscriberArgs e)
         {
-            MySQL.MySQLHandler.Instance.Subscriptions.ProcessSubscription(e.ReSubscriber.DisplayName, e.ReSubscriber.UserId, true, e.ReSubscriber.SubscriptionPlan == SubscriptionPlan.Prime);
+            MySQL.MySqlHandler.Instance.Subscriptions.ProcessSubscription(e.ReSubscriber.DisplayName, e.ReSubscriber.UserId, true, e.ReSubscriber.SubscriptionPlan == SubscriptionPlan.Prime);
         }
 
         private void Client_OnGiftedSubscription(object sender, OnGiftedSubscriptionArgs e)
         {
-            MySQL.MySQLHandler.Instance.Subscriptions.ProcessSubscription(e.GiftedSubscription.MsgParamRecipientDisplayName, e.GiftedSubscription.MsgParamRecipientId, false, false, true, e.GiftedSubscription.DisplayName, e.GiftedSubscription.UserId);
+            MySQL.MySqlHandler.Instance.Subscriptions.ProcessSubscription(e.GiftedSubscription.MsgParamRecipientDisplayName, e.GiftedSubscription.MsgParamRecipientId, false, false, true, e.GiftedSubscription.DisplayName, e.GiftedSubscription.UserId);
         }
 
         public void ProcessStreamOnline()
         {
-            if (!client.IsConnected) return;
-            client.SendMessage(ConfigurationHandler.Instance.Configuration.ChannelName, $"[BOT] Stream Started - Monitoring Chat and Bit Events.");
+            if (_client is not {IsConnected: true}) return;
+
+            _client.SendMessage(ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName, $"[BOT] Stream Started - Monitoring Chat and Bit Events.");
         }
 
         public void ProcessStreamOffline()
         {
-            if (!client.IsConnected) return;
-            client.SendMessage(ConfigurationHandler.Instance.Configuration.ChannelName, $"[BOT] Stream Ended - Disabling Chat and Bit Event Hooks.");
+            if (_client is not {IsConnected: true}) return;
+            _client.SendMessage(ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName, $"[BOT] Stream Ended - Disabling Chat and Bit Event Hooks.");
         }
 
         public void Dispose()
         {
-            ConsoleUtil.WriteToConsole("Disposing Twitch IRC Chat Classes...", ConsoleUtil.LogLevel.INFO);
+            if (_client == null) return;
 
-            foreach (var channel in client.JoinedChannels)
+            ConsoleUtil.WriteToConsole("Disposing Twitch IRC Chat Classes...", ConsoleUtil.LogLevel.Info);
+
+            foreach (var channel in _client.JoinedChannels)
             {
-                ConsoleUtil.WriteToConsole($"Attemtping to leave channel {channel.Channel}", ConsoleUtil.LogLevel.INFO);
-                client.LeaveChannel(channel.Channel);
+                ConsoleUtil.WriteToConsole($"Attemtping to leave channel {channel.Channel}", ConsoleUtil.LogLevel.Info);
+                _client.LeaveChannel(channel.Channel);
             }
             
-            ConsoleUtil.WriteToConsole("Disconnecting from Twitch IRC", ConsoleUtil.LogLevel.INFO);
-            client.Disconnect();
-            ConsoleUtil.WriteToConsole("Disconnecting from Twitch IRC - Done", ConsoleUtil.LogLevel.INFO);
+            ConsoleUtil.WriteToConsole("Disconnecting from Twitch IRC", ConsoleUtil.LogLevel.Info);
+            _client.Disconnect();
+            ConsoleUtil.WriteToConsole("Disconnecting from Twitch IRC - Done", ConsoleUtil.LogLevel.Info);
 
             var maxTries = 10;
             var currentTry = 1;
-            while (client.IsConnected)
+            while (_client.IsConnected)
             {
-                ConsoleUtil.WriteToConsole($"Attempting to disconnect from Twitch Chat IRC [{currentTry}/{maxTries}]", ConsoleUtil.LogLevel.INFO);
+                ConsoleUtil.WriteToConsole($"Attempting to disconnect from Twitch Chat IRC [{currentTry}/{maxTries}]", ConsoleUtil.LogLevel.Info);
                 Thread.Sleep(1000);
                 ++currentTry;
 

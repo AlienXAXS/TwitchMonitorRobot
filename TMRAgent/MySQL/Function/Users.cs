@@ -7,13 +7,13 @@ namespace TMRAgent.MySQL.Function
 {
     internal class Users
     {
-        private Dictionary<string, int> UsernameMemory = new Dictionary<string, int>();
+        private Dictionary<string, int> _usernameMemory = new Dictionary<string, int>();
 
         public int GetUserId(string Username, int TwitchUserId, bool isModerator = false)
         {
-            if (UsernameMemory.ContainsKey(Username))
+            if (_usernameMemory.ContainsKey(Username))
             {
-                return UsernameMemory[Username];
+                return _usernameMemory[Username];
             }
 
             var userId = -1;
@@ -28,7 +28,7 @@ namespace TMRAgent.MySQL.Function
                     if (usrTwitchIdFix != null && usrTwitchIdFix.TwitchId == 0)
                     {
                         // Fix the user
-                        ConsoleUtil.WriteToConsole($"Fixing TwitchID for user {Username} = {TwitchUserId}", ConsoleUtil.LogLevel.INFO, ConsoleColor.Yellow);
+                        ConsoleUtil.WriteToConsole($"Fixing TwitchID for user {Username} = {TwitchUserId}", ConsoleUtil.LogLevel.Info, ConsoleColor.Yellow);
                         UpdateExistingUser(usrTwitchIdFix.Id, TwitchId: TwitchUserId);
                     }
 
@@ -36,12 +36,12 @@ namespace TMRAgent.MySQL.Function
                     if (user.Any())
                     {
                         userId = user.First().Id;
-                        UsernameMemory.Add(Username, userId);
+                        _usernameMemory.Add(Username, userId);
                     }
                     else
                     {
                         userId = AddNewUser(Username, TwitchUserId, isModerator);
-                        UsernameMemory.Add(Username, userId);
+                        _usernameMemory.Add(Username, userId);
                     }
                 }
             }

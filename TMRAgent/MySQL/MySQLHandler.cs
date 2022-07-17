@@ -2,10 +2,11 @@
 
 namespace TMRAgent.MySQL
 {
-    internal class MySQLHandler
+    internal class MySqlHandler
     {
-        public static MySQLHandler Instance = _instance ??= new MySQLHandler();
-        private static readonly MySQLHandler? _instance;
+        public static MySqlHandler Instance = _instance ??= new MySqlHandler();
+        // ReSharper disable once InconsistentNaming
+        private static readonly MySqlHandler? _instance;
 
         public Function.Bits Bits = new Function.Bits();
         public Function.Messages Messages = new Function.Messages();
@@ -20,12 +21,12 @@ namespace TMRAgent.MySQL
             {
                 using ( var db = new DBConnection.Database() )
                 {
-                    ConsoleUtil.WriteToConsole($"DB Version: {db.Connection.ServerVersion}", ConsoleUtil.LogLevel.INFO);  
+                    ConsoleUtil.WriteToConsole($"DB Version: {db.Connection.ServerVersion}", ConsoleUtil.LogLevel.Info);  
                 }
             }
             catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"Fatal Error: {ex.Message}\r\n\r\n{ex.StackTrace}", ConsoleUtil.LogLevel.FATAL, ConsoleColor.Red);
+                ConsoleUtil.WriteToConsole($"Fatal Error: {ex.Message}\r\n\r\n{ex.StackTrace}", ConsoleUtil.LogLevel.Fatal, ConsoleColor.Red);
             }
         }
 

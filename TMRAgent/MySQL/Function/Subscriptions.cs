@@ -12,28 +12,28 @@ namespace TMRAgent.MySQL.Function
             {
                 var intUserId = int.Parse(UserId);
                 var intGiftUserId = -1;
-                int? GiftUserDBIndex = new int();
+                int? giftUserDbIndex = new int();
 
                 if (GiftUserId != "")
                 {
                     intGiftUserId = int.Parse(GiftUserId);
-                    GiftUserDBIndex = MySQLHandler.Instance.Users.GetUserId(intGiftUserId);
+                    giftUserDbIndex = MySqlHandler.Instance.Users.GetUserId(intGiftUserId);
                 }
 
-                var UserIdDBIndex = MySQLHandler.Instance.Users.GetUserId(Username, intUserId);
+                var userIdDbIndex = MySqlHandler.Instance.Users.GetUserId(Username, intUserId);
 
                 using ( var db = new DBConnection.Database())
                 {
                     var dbInsert = db.Subscriptions
-                        .Value(p => p.UserId, UserIdDBIndex)
+                        .Value(p => p.UserId, userIdDbIndex)
                         .Value(p => p.Date, DateTime.Now.ToUniversalTime())
                         .Value(p => p.IsRenew, IsRenew)
                         .Value(p => p.IsPrime, IsPrime)
                         .Value(p => p.IsGift, IsGift);
 
-                    if ( IsGift && GiftUserDBIndex.HasValue )
+                    if ( IsGift && giftUserDbIndex.HasValue )
                     {
-                        dbInsert.Value(p => p.GiftFromUserId, GiftUserDBIndex.Value);
+                        dbInsert.Value(p => p.GiftFromUserId, giftUserDbIndex.Value);
                     }
 
                     dbInsert.Insert();
@@ -41,7 +41,7 @@ namespace TMRAgent.MySQL.Function
 
             } catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"Fatal Error during ProcessSubscription[{Username}, {UserId}, {IsRenew}, {IsPrime}, {IsGift}, {GiftUserId}] -> {ex.Message}\r\n\r\n{ex.StackTrace}", ConsoleUtil.LogLevel.FATAL, ConsoleColor.Red);
+                ConsoleUtil.WriteToConsole($"Fatal Error during ProcessSubscription[{Username}, {UserId}, {IsRenew}, {IsPrime}, {IsGift}, {GiftUserId}] -> {ex.Message}\r\n\r\n{ex.StackTrace}", ConsoleUtil.LogLevel.Fatal, ConsoleColor.Red);
             }
         }
 

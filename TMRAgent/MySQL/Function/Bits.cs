@@ -9,7 +9,7 @@ namespace TMRAgent.MySQL.Function
         {
             try
             {
-                var dbUserId = MySQL.MySQLHandler.Instance.Users.GetUserId(Username, TwitchUserId);
+                var dbUserId = MySQL.MySqlHandler.Instance.Users.GetUserId(Username, TwitchUserId);
 
                 using (var db = new DBConnection.Database())
                 {

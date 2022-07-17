@@ -10,11 +10,11 @@ namespace TMRAgent.MySQL.Function
             int userId;
             try
             {
-                userId = MySQLHandler.Instance.Users.GetUserId(Username, TwitchUserId, IsModerator);
+                userId = MySqlHandler.Instance.Users.GetUserId(Username, TwitchUserId, IsModerator);
             }
             catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"Exception:\r\n{ex.Message}", ConsoleUtil.LogLevel.ERROR);
+                ConsoleUtil.WriteToConsole($"Exception:\r\n{ex.Message}", ConsoleUtil.LogLevel.Error);
                 return;
             }
 
@@ -32,7 +32,7 @@ namespace TMRAgent.MySQL.Function
             }
             catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"Exception:\r\n{ex.Message}", ConsoleUtil.LogLevel.ERROR);
+                ConsoleUtil.WriteToConsole($"Exception:\r\n{ex.Message}", ConsoleUtil.LogLevel.Error);
             }
         }
     }
