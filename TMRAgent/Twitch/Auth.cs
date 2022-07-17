@@ -60,6 +60,47 @@ namespace TMRAgent.Twitch
             }
         }
 
+        public void Validate(bool autoRenew = true)
+        {
+            ConsoleUtil.WriteToConsole("[OAuthChecker] Checking OAuth Tokens Validity", ConsoleUtil.LogLevel.Info);
+            var twitchChatOAuth = TestAuth(AuthType.TwitchChat);
+            var pubSubOAuth = TestAuth(AuthType.PubSub);
+
+            if (!twitchChatOAuth)
+            {
+                ConsoleUtil.WriteToConsole("[OAuthChecker] Failed to validate TwitchChat OAuth Token",
+                    ConsoleUtil.LogLevel.Warn,
+                    ConsoleColor.Yellow);
+
+                if (!autoRenew) return;
+                if (!RefreshToken(AuthType.TwitchChat)
+                        .GetAwaiter().GetResult())
+                {
+                    throw new Exception("Unable to refresh Auth Token for TwitchChat, Application cannot continue!");
+                }
+            }
+            else
+            {
+                ConsoleUtil.WriteToConsole($"[OAuthChecker] Successfully validated TwitchChat OAuth Tokens, Expiry: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry}/UTC", ConsoleUtil.LogLevel.Info);
+            }
+
+            if (!pubSubOAuth)
+            {
+                ConsoleUtil.WriteToConsole("[OAuthChecker] Failed to validate TwitchPubSub OAuth Token", ConsoleUtil.LogLevel.Warn, ConsoleColor.Yellow);
+
+                if (!autoRenew) return;
+                if (!RefreshToken(AuthType.PubSub)
+                    .GetAwaiter().GetResult())
+                {
+                    throw new Exception("Unable to refresh Auth Token for PubSub, Application cannot continue!");
+                }
+            }
+            else
+            {
+                ConsoleUtil.WriteToConsole($"[OAuthChecker] Successfully validated TwitchChat OAuth Tokens, Expiry: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry}/UTC", ConsoleUtil.LogLevel.Info);
+            }
+        }
+
         public async Task<bool> RefreshToken(AuthType authType)
         {
             // Get our refresh token

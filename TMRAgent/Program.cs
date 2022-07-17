@@ -31,7 +31,7 @@ namespace TMRAgent
 
             try
             {
-                CheckOAuthTokens();
+                Twitch.TwitchHandler.Instance.Auth.Validate();
             }
             catch (Exception exception)
             {
@@ -99,43 +99,7 @@ namespace TMRAgent
             }
         }
 
-        private void CheckOAuthTokens()
-        {
-            ConsoleUtil.WriteToConsole("[OAuthChecker] Checking OAuth Tokens Validity", ConsoleUtil.LogLevel.Info);
-            var twitchChatOAuth = Twitch.TwitchHandler.Instance.Auth.TestAuth(Twitch.Auth.AuthType.TwitchChat);
-            var pubSubOAuth = Twitch.TwitchHandler.Instance.Auth.TestAuth(Twitch.Auth.AuthType.PubSub);
-
-            if (!twitchChatOAuth)
-            {
-                ConsoleUtil.WriteToConsole("[OAuthChecker] Failed to validate TwitchChat OAuth Token, Attempting refresh.", 
-                    ConsoleUtil.LogLevel.Warn, 
-                    ConsoleColor.Yellow);
-
-                if (!Twitch.TwitchHandler.Instance.Auth.RefreshToken(Twitch.Auth.AuthType.TwitchChat)
-                        .GetAwaiter().GetResult())
-                {
-                    throw new Exception("Unable to refresh Auth Token for TwitchChat, Application cannot continue!");
-                }
-            }
-            else
-            {
-                ConsoleUtil.WriteToConsole($"[OAuthChecker] Successfully validated TwitchChat OAuth Tokens, Expiry: {Twitch.ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry}/UTC", ConsoleUtil.LogLevel.Info);
-            }
-
-            if (!pubSubOAuth)
-            {
-                ConsoleUtil.WriteToConsole("[OAuthChecker] Failed to validate TwitchPubSub OAuth Token, Attempting refresh.", ConsoleUtil.LogLevel.Warn, ConsoleColor.Yellow);
-                if (!Twitch.TwitchHandler.Instance.Auth.RefreshToken(Twitch.Auth.AuthType.PubSub)
-                    .GetAwaiter().GetResult())
-                {
-                    throw new Exception("Unable to refresh Auth Token for PubSub, Application cannot continue!");
-                }
-            }
-            else
-            {
-                ConsoleUtil.WriteToConsole($"[OAuthChecker] Successfully validated TwitchChat OAuth Tokens, Expiry: {Twitch.ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry}/UTC", ConsoleUtil.LogLevel.Info);
-            }
-        }
+        
 
         private void ConnectTwitchChat()
         {
