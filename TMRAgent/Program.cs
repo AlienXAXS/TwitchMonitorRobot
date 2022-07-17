@@ -37,6 +37,7 @@ namespace TMRAgent
             {
                 ConsoleUtil.WriteToConsole($"Fatal Error: {exception.Message}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
                 ShutdownApp();
+                return;
             }
 
             ConnectTwitchChat();
