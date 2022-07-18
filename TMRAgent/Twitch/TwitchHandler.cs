@@ -41,6 +41,7 @@ namespace TMRAgent.Twitch
             _client.OnLog += Client_OnLog!;
             _client.OnConnectionError += ClientOnOnConnectionError;
             _client.OnFailureToReceiveJoinConfirmation += ClientOnOnFailureToReceiveJoinConfirmation;
+            _client.OnNoPermissionError += ClientOnOnNoPermissionError;
 
             // Auth Issues
             _client.OnIncorrectLogin += ClientOnOnIncorrectLogin;
@@ -50,22 +51,19 @@ namespace TMRAgent.Twitch
             _client.OnConnected += Client_OnConnected;
             _client.OnJoinedChannel += Client_OnJoinedChannel;
 
-            _client.OnNoPermissionError += ClientOnOnNoPermissionError;
-
             // Stream State
             _client.OnChannelStateChanged += ClientOnOnChannelStateChanged;
 
             // Messages
             _client.OnMessageReceived += Client_OnMessageReceived;
-#if !DEBUG
+
             // Subscriptions
-            client.OnNewSubscriber += Client_OnNewSubscriber;
-            client.OnReSubscriber += ClientOnOnReSubscriber;
-            client.OnGiftedSubscription += Client_OnGiftedSubscription;
+            _client.OnNewSubscriber += Client_OnNewSubscriber;
+            _client.OnReSubscriber += ClientOnOnReSubscriber;
+            _client.OnGiftedSubscription += Client_OnGiftedSubscription;
 
             // Tests
-            client.OnRitualNewChatter += Client_OnRitualNewChatter;
-#endif
+            _client.OnRitualNewChatter += Client_OnRitualNewChatter;
 
             _client.Connect();
         }
@@ -246,7 +244,7 @@ namespace TMRAgent.Twitch
             }
         }
 
-        private void Client_OnNewSubscriber(object sender, OnNewSubscriberArgs e)
+        private void Client_OnNewSubscriber(object? sender, OnNewSubscriberArgs e)
         {
             MySQL.MySqlHandler.Instance.Subscriptions.ProcessSubscription(e.Subscriber.DisplayName, e.Subscriber.UserId, false, e.Subscriber.SubscriptionPlan == SubscriptionPlan.Prime);
         }
@@ -256,7 +254,7 @@ namespace TMRAgent.Twitch
             MySQL.MySqlHandler.Instance.Subscriptions.ProcessSubscription(e.ReSubscriber.DisplayName, e.ReSubscriber.UserId, true, e.ReSubscriber.SubscriptionPlan == SubscriptionPlan.Prime);
         }
 
-        private void Client_OnGiftedSubscription(object sender, OnGiftedSubscriptionArgs e)
+        private void Client_OnGiftedSubscription(object? sender, OnGiftedSubscriptionArgs e)
         {
             MySQL.MySqlHandler.Instance.Subscriptions.ProcessSubscription(e.GiftedSubscription.MsgParamRecipientDisplayName, e.GiftedSubscription.MsgParamRecipientId, false, false, true, e.GiftedSubscription.DisplayName, e.GiftedSubscription.UserId);
         }

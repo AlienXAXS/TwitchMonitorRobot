@@ -97,7 +97,7 @@ namespace TMRAgent.Twitch
             }
             else
             {
-                ConsoleUtil.WriteToConsole($"[OAuthChecker] Successfully validated TwitchChat OAuth Tokens, Expiry: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry}/UTC", ConsoleUtil.LogLevel.Info);
+                ConsoleUtil.WriteToConsole($"[OAuthChecker] Successfully validated PubSub OAuth Tokens, Expiry: {ConfigurationHandler.Instance.Configuration.PubSub.TokenExpiry}/UTC", ConsoleUtil.LogLevel.Info);
             }
         }
 
