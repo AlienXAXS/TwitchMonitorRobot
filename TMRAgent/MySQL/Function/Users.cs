@@ -53,6 +53,23 @@ namespace TMRAgent.MySQL.Function
             return userId;
         }
 
+        public int? GetUserByUsername(string username)
+        {
+            try
+            {
+                using (var db = new DBConnection.Database())
+                {
+                    var user = db.Users.DefaultIfEmpty(null)
+                        .FirstOrDefault(x => x.Username.ToLower().Equals(username.ToLower()));
+                    return user?.Id;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unable to get User ID in Database for user {username}\r\n\r\nError: {ex.Message}");
+            }
+        }
+
         public int? GetUserId(int TwitchUserId)
         {
             int? userId = null;
