@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using System.Threading;
+using TMRAgent.MySQL.Commands;
 using TwitchLib.Client;
 using TwitchLib.Client.Enums;
 using TwitchLib.Client.Events;
@@ -18,10 +19,11 @@ namespace TMRAgent.Twitch
 
         private TwitchClient? _client;
 
-        private MySQL.Commands.AddModeratorCommand _addModeratorCommand = new MySQL.Commands.AddModeratorCommand();
-        private MySQL.Commands.RemoveModeratorCommand _removeModeratorCommand = new MySQL.Commands.RemoveModeratorCommand();
-        private MySQL.Commands.TopCommand _topCommand = new MySQL.Commands.TopCommand();
-        private MySQL.Commands.UserStatsCommand _userStatsCommand = new MySQL.Commands.UserStatsCommand();
+        private readonly AddModeratorCommand _addModeratorCommand = new();
+        private readonly RemoveModeratorCommand _removeModeratorCommand = new();
+        private readonly UserManager _userManagerCommand = new();
+        private readonly TopCommand _topCommand = new();
+        private readonly UserStatsCommand _userStatsCommand = new();
 
         public Auth Auth = new Auth();
 
@@ -183,7 +185,7 @@ namespace TMRAgent.Twitch
         {
             if (_client == null) return;
 
-            var parameters = chatMessage.Message.Split(' ', 2);
+            var parameters = chatMessage.Message.Trim().Split(' ');
 
             switch (parameters[0].ToLower())
             {
@@ -201,6 +203,11 @@ namespace TMRAgent.Twitch
                     if (!IsUserModeratorOrBroadcaster(chatMessage)) return;
                     _client.SendMessage(chatMessage.Channel, "TMR Shutting down now, Byeeee!");
                     Program.QuitAppEvent.Set();
+                    break;
+
+                case "!!manage_user":
+                    if (!IsUserModeratorOrBroadcaster(chatMessage)) return;
+                    _userManagerCommand.Handle(chatMessage, parameters);
                     break;
 
                 case "!!walls":
@@ -237,7 +244,7 @@ namespace TMRAgent.Twitch
                     break;
 
                 case "!!help":
-                    _client.SendMessage(chatMessage.Channel, $"Commands are: !!top [redeem], !!about, !!help (more added soon!)");
+                    _client.SendMessage(chatMessage.Channel, $"Commands are: !!top [redeem], !!about, !!stats, !!dead, !!walls.  (Mods Only: !!add_mod_action, !!remove_mod_action, !!manage_user, !!shutdown)");
                     break;
             }
         }
