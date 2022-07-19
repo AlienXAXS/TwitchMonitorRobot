@@ -1,6 +1,7 @@
 ﻿using LinqToDB;
 using System;
 using System.Linq;
+using LinqToDB.Data;
 
 namespace TMRAgent.MySQL.Function
 {
@@ -12,11 +13,15 @@ namespace TMRAgent.MySQL.Function
             {
                 using (var db = new DBConnection.Database())
                 {
-                    var currentStream = db.Streams.DefaultIfEmpty(null).FirstOrDefault(x => x.End.Equals(null) && (x.LastSeen.Between(DateTime.Now.ToUniversalTime().AddMinutes(-30), DateTime.Now.ToUniversalTime()) || x.Start.Equals(dateTime)));
+                    var currentStreamDbEntry = db.Streams.DefaultIfEmpty(null).Where(x =>
+                        x.LastSeen.Between(DateTime.Now.ToUniversalTime().AddMinutes(-120),
+                            DateTime.Now.ToUniversalTime()) || x.Start.Equals(dateTime));
+                    var currentStream = currentStreamDbEntry.ToList().OrderBy(x => x.LastSeen).FirstOrDefault();
                     if (currentStream != null)
                     {
                         ConsoleUtil.WriteToConsole($"[StreamEvent] Found an existing row in the Database for this ongoing stream, using StreamID {currentStream.Id} (Stream Started At {currentStream.Start}).", ConsoleUtil.LogLevel.Info, ConsoleColor.Yellow);
                         Twitch.TwitchLiveMonitor.Instance.CurrentLiveStreamId = currentStream.Id;
+                        db.Query<dynamic>($"UPDATE `streams` SET `end` = NULL WHERE `streams`.`id` = {currentStream.Id};");
                     }
                     else
                     {

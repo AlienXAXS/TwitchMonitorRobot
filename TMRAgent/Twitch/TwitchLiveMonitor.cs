@@ -8,6 +8,7 @@ using TwitchLib.Api.Services;
 using TwitchLib.Api.Services.Events;
 using TwitchLib.Api.Services.Events.LiveStreamMonitor;
 using TwitchLib.PubSub;
+using TwitchLib.PubSub.Events;
 
 namespace TMRAgent.Twitch
 {
@@ -52,15 +53,21 @@ namespace TMRAgent.Twitch
             LiveStreamMonitorService.OnStreamOffline += LiveStreamMonitorService_OnStreamOffline;
             LiveStreamMonitorService.OnStreamUpdate += LiveStreamMonitorService_OnStreamUpdate;
             LiveStreamMonitorService.OnServiceStopped += LiveStreamMonitorServiceOnOnServiceStopped;
+            LiveStreamMonitorService.OnServiceStarted += LiveStreamMonitorServiceOnOnServiceStarted;
 
             LiveStreamMonitorService.Start();
 
             _quitAppEvent.WaitOne();
         }
 
+        private void LiveStreamMonitorServiceOnOnServiceStarted(object? sender, OnServiceStartedArgs e)
+        {
+            ConsoleUtil.WriteToConsole("[LiveStreamMonitorServiceOnOnServiceStarted] State: Started", ConsoleUtil.LogLevel.Info);
+        }
+
         private void LiveStreamMonitorServiceOnOnServiceStopped(object? sender, OnServiceStoppedArgs e)
         {
-            
+            ConsoleUtil.WriteToConsole("[LiveStreamMonitorServiceOnOnServiceStopped] State: Stopped", ConsoleUtil.LogLevel.Info);
         }
 
         private void LiveStreamMonitorService_OnStreamUpdate(object? sender, OnStreamUpdateArgs e)
@@ -78,6 +85,10 @@ namespace TMRAgent.Twitch
             _pubSubClient.OnBitsReceivedV2 += PubSubClient_OnBitsReceivedV2!;
             _pubSubClient.OnChannelPointsRewardRedeemed += PubSubClient_OnChannelPointsRewardRedeemed!;
 
+            _pubSubClient.OnPubSubServiceError += PubSubClientOnOnPubSubServiceError;
+            _pubSubClient.OnPubSubServiceClosed += PubSubClientOnOnPubSubServiceClosed;
+            _pubSubClient.OnPubSubServiceConnected += PubSubClientOnOnPubSubServiceConnected;
+
             _pubSubClient.OnStreamDown += PubSubClient_OnStreamDown!;
             _pubSubClient.OnStreamUp += PubSubClient_OnStreamUp!;
 
@@ -86,6 +97,21 @@ namespace TMRAgent.Twitch
             _pubSubClient.Connect();
 
             _quitAppEvent.WaitOne();
+        }
+
+        private void PubSubClientOnOnPubSubServiceConnected(object? sender, EventArgs e)
+        {
+            ConsoleUtil.WriteToConsole($"[PubSubClientOnOnPubSubServiceConnected] State: Started", ConsoleUtil.LogLevel.Info);
+        }
+
+        private void PubSubClientOnOnPubSubServiceClosed(object? sender, EventArgs e)
+        {
+            ConsoleUtil.WriteToConsole($"[PubSubClientOnOnPubSubServiceClosed] State: Stopped", ConsoleUtil.LogLevel.Info);
+        }
+
+        private void PubSubClientOnOnPubSubServiceError(object? sender, OnPubSubServiceErrorArgs e)
+        {
+            ConsoleUtil.WriteToConsole($"[PubSubClientOnOnPubSubServiceError] Error: {e.Exception}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
         }
 
         private void PubSubClient_OnStreamUp(object sender, TwitchLib.PubSub.Events.OnStreamUpArgs e)

@@ -13,6 +13,25 @@ namespace TMRAgent.Twitch
             PubSub
         }
 
+        public bool HasTokenExpired(AuthType authType)
+        {
+
+            switch (authType)
+            {
+                case AuthType.TwitchChat:
+                    return DateTime.Now.ToUniversalTime() >=
+                           ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry;
+                    break;
+                case AuthType.PubSub:
+                    return DateTime.Now.ToUniversalTime() >=
+                           ConfigurationHandler.Instance.Configuration.PubSub.TokenExpiry;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(authType), authType, null);
+            }
+
+        }
+
         public bool TestAuth(AuthType authType)
         {
             var api = new TwitchLib.Api.TwitchAPI
@@ -33,6 +52,7 @@ namespace TMRAgent.Twitch
                         DateTime.Now.ToUniversalTime() >=
                         ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry)
                     {
+                        ConsoleUtil.WriteToConsole($"[OAuthChecker] TwitchChat Token has expired, marking it as dirty! (exp: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry})", ConsoleUtil.LogLevel.Info);
                         return false;
                     }
 
@@ -44,6 +64,7 @@ namespace TMRAgent.Twitch
                         DateTime.Now.ToUniversalTime() >=
                         ConfigurationHandler.Instance.Configuration.PubSub.TokenExpiry)
                     {
+                        ConsoleUtil.WriteToConsole($"[OAuthChecker] PubSub Token has expired, marking it as dirty! (exp: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry})", ConsoleUtil.LogLevel.Info);
                         return false;
                     }
 

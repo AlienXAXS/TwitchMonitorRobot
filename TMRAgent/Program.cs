@@ -8,8 +8,9 @@ namespace TMRAgent
     internal class Program
     {
         public static ManualResetEvent QuitAppEvent = new ManualResetEvent(false);
+        public static bool ExitRequested = false;
 
-        public static string Version = "0.1.1 Beta";
+        public static string Version = "0.1.2 Beta";
 
         static void Main(string[] args)
         {
@@ -18,12 +19,10 @@ namespace TMRAgent
 
         public void MainMethod()
         {
-            QuitAppEvent.Reset();
-            
             DataConnection.DefaultSettings = new MySQL.DBConnection.MySettings();
-
             AppDomain.CurrentDomain.ProcessExit += (sender, args) => HandleApplicationExitEvent();
             Console.CancelKeyPress += (sender, args) => HandleApplicationExitEvent();
+            QuitAppEvent.Reset();
 
             ConsoleUtil.WriteToConsole($"Twitch Management Robot v{Version} Starting...", ConsoleUtil.LogLevel.Info);
 
@@ -55,6 +54,7 @@ namespace TMRAgent
 
         private void ShutdownApp()
         {
+            ExitRequested = true;
             Twitch.TwitchHandler.Instance.Dispose();
             Twitch.TwitchLiveMonitor.Instance.Dispose();
         }

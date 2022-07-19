@@ -98,7 +98,9 @@ namespace TMRAgent.Twitch
 
         private void ClientOnOnConnectionError(object? sender, OnConnectionErrorArgs e)
         {
-            
+            ConsoleUtil.WriteToConsole($"[TwitchClient] TwitchChat Client Connection Error!", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+            if (!Program.ExitRequested)
+                Connect();
         }
 
         private void ClientOnOnNoPermissionError(object? sender, EventArgs e)
@@ -108,7 +110,9 @@ namespace TMRAgent.Twitch
 
         private void Client_OnDisconnected(object? sender, TwitchLib.Communication.Events.OnDisconnectedEventArgs e)
         {
-            ConsoleUtil.WriteToConsole($"[TwitchClient] Disconnection! {e}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+            ConsoleUtil.WriteToConsole($"[TwitchClient] TwitchChat Client has disconnected!", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+            if ( !Program.ExitRequested )
+                Connect();
         }
 
         private void Client_OnRitualNewChatter(object? sender, OnRitualNewChatterArgs e)
@@ -191,6 +195,12 @@ namespace TMRAgent.Twitch
                 case "!!remove_mod_action":
                     if (!IsUserModeratorOrBroadcaster(chatMessage)) return;
                     _removeModeratorCommand.Handle(chatMessage, parameters);
+                    break;
+
+                case "!!shutdown":
+                    if (!IsUserModeratorOrBroadcaster(chatMessage)) return;
+                    _client.SendMessage(chatMessage.Channel, "TMR Shutting down now, Byeeee!");
+                    Program.QuitAppEvent.Set();
                     break;
 
                 case "!!walls":
