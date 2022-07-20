@@ -7,3 +7,6 @@
 [submodule "External/TwitchLib.PubSub"]
 	path = External/TwitchLib.PubSub
 	url = https://github.com/TwitchLib/TwitchLib.PubSub.git
+[submodule "External/TwitchLib.Communication"]
+	path = External/TwitchLib.Communication
+	url = https://github.com/TwitchLib/TwitchLib.Communication.git
