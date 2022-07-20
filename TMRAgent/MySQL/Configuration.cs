@@ -18,7 +18,7 @@ namespace TMRAgent.MySQL
 
         private string _configFileName = "db.conf";
 
-        public Configuration Configuration = new Configuration();
+        public Configuration Configuration = new();
 
         public ConfigurationHandler()
         {

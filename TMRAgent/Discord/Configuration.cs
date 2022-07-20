@@ -18,7 +18,7 @@ namespace TMRAgent.Discord
 
         private string _configFileName = "discord.conf";
 
-        public Configuration? Configuration = new Configuration();
+        public Configuration? Configuration = new();
         public bool IsEnabled = false;
 
         public ConfigurationHandler()

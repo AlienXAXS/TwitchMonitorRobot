@@ -7,10 +7,10 @@ namespace TMRAgent
 {
     internal class Program
     {
-        public static ManualResetEvent QuitAppEvent = new ManualResetEvent(false);
+        public static ManualResetEvent QuitAppEvent = new(false);
         public static bool ExitRequested = false;
 
-        public static string Version = "0.1.3 Beta";
+        public static string Version = "0.1.4 Beta";
 
         static void Main(string[] args)
         {
@@ -27,17 +27,6 @@ namespace TMRAgent
             ConsoleUtil.WriteToConsole($"Twitch Management Robot v{Version} Starting...", ConsoleUtil.LogLevel.Info);
 
             CheckConfigurationValidity();
-
-            try
-            {
-                Twitch.TwitchHandler.Instance.Auth.Validate();
-            }
-            catch (Exception exception)
-            {
-                ConsoleUtil.WriteToConsole($"Fatal Error: {exception.Message}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
-                ShutdownApp();
-                return;
-            }
 
             ConnectTwitchChat();
 
@@ -64,6 +53,7 @@ namespace TMRAgent
             try
             {
                 Twitch.TwitchHandler.Instance.LivestreamMonitorService.Start();
+                Twitch.TwitchHandler.Instance.PubSubHandler.Start();
                 ConsoleUtil.WriteToConsole(" -> Success", ConsoleUtil.LogLevel.Info);
             }
             catch (Exception ex)
@@ -97,8 +87,6 @@ namespace TMRAgent
                 return;
             }
         }
-
-        
 
         private void ConnectTwitchChat()
         {

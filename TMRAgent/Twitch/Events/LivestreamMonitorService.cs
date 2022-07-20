@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using TMRAgent.Twitch.Utility;
 using TwitchLib.Api;
 using TwitchLib.Api.Services;
 using TwitchLib.Api.Services.Events;
@@ -29,6 +30,20 @@ namespace TMRAgent.Twitch.Events
 
         public void StartAsyncMonitor()
         {
+
+            // Validate OAuth Token
+            try
+            {
+                TwitchHandler.Instance.Auth.Validate(Auth.AuthType.LiveStreamMonitorService, true);
+            }
+            catch (Exception ex)
+            {
+                ConsoleUtil.WriteToConsole($"[LivestreamMonitorService] Unable to connect to Twitch Livestream Monitoring.  OAuth Validation failed. Error: {ex.Message}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+                return;
+            }
+
+            if (TwitchApi is not null) TwitchApi = null;
+
             TwitchApi = new TwitchAPI
             {
                 Settings =
@@ -60,6 +75,8 @@ namespace TMRAgent.Twitch.Events
         private void LiveStreamMonitorServiceOnOnServiceStopped(object? sender, OnServiceStoppedArgs e)
         {
             ConsoleUtil.WriteToConsole("[LiveStreamMonitorServiceOnOnServiceStopped] State: Stopped", ConsoleUtil.LogLevel.Info);
+            if ( !Program.ExitRequested )
+                StartAsyncMonitor();
         }
 
         private void LiveStreamMonitorService_OnStreamUpdate(object? sender, OnStreamUpdateArgs e)
@@ -80,7 +97,6 @@ namespace TMRAgent.Twitch.Events
             ConsoleUtil.WriteToConsole("[StreamEvent] Stream is now marked as Online, creating new Database entry.", ConsoleUtil.LogLevel.Info, ConsoleColor.Yellow);
             MySQL.MySqlHandler.Instance.Streams.ProcessStreamOnline(e.Stream.StartedAt);
         }
-
 
         public void Dispose()
         {

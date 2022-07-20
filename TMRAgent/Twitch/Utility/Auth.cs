@@ -10,7 +10,8 @@ namespace TMRAgent.Twitch.Utility
         public enum AuthType
         {
             TwitchChat,
-            PubSub
+            PubSub,
+            LiveStreamMonitorService
         }
 
         public bool HasTokenExpired(AuthType authType)
@@ -47,12 +48,13 @@ namespace TMRAgent.Twitch.Utility
             switch (authType)
             {
                 case AuthType.TwitchChat:
+                case AuthType.LiveStreamMonitorService:
                     if (ConfigurationHandler.Instance.Configuration.TwitchChat.RefreshToken == null ||
                         ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry == null ||
                         DateTime.Now.ToUniversalTime() >=
                         ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry)
                     {
-                        ConsoleUtil.WriteToConsole($"[OAuthChecker] TwitchChat Token has expired, marking it as dirty! (exp: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry})", ConsoleUtil.LogLevel.Info);
+                        ConsoleUtil.WriteToConsole($"[OAuthChecker] {Enum.GetName(authType)} Token has expired, marking it as dirty! (exp: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry})", ConsoleUtil.LogLevel.Info);
                         return false;
                     }
 
@@ -64,7 +66,7 @@ namespace TMRAgent.Twitch.Utility
                         DateTime.Now.ToUniversalTime() >=
                         ConfigurationHandler.Instance.Configuration.PubSub.TokenExpiry)
                     {
-                        ConsoleUtil.WriteToConsole($"[OAuthChecker] PubSub Token has expired, marking it as dirty! (exp: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry})", ConsoleUtil.LogLevel.Info);
+                        ConsoleUtil.WriteToConsole($"[OAuthChecker] {Enum.GetName(authType)} Token has expired, marking it as dirty! (exp: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry})", ConsoleUtil.LogLevel.Info);
                         return false;
                     }
 
@@ -81,45 +83,39 @@ namespace TMRAgent.Twitch.Utility
             }
         }
 
-        public void Validate(bool autoRenew = true)
+        public bool Validate(AuthType validateOn, bool AutomaticRefresh)
         {
-            ConsoleUtil.WriteToConsole("[OAuthChecker] Checking OAuth Tokens Validity", ConsoleUtil.LogLevel.Info);
-            var twitchChatOAuth = TestAuth(AuthType.TwitchChat);
-            var pubSubOAuth = TestAuth(AuthType.PubSub);
+            ConsoleUtil.WriteToConsole($"[OAuthChecker] Checking OAuth Tokens Validity for {Enum.GetName(validateOn)}", ConsoleUtil.LogLevel.Info);
+            var validationResult = TestAuth(validateOn);
 
-            if (!twitchChatOAuth)
+            if (!validationResult)
             {
-                ConsoleUtil.WriteToConsole("[OAuthChecker] Failed to validate TwitchChat OAuth Token",
+                ConsoleUtil.WriteToConsole($"[OAuthChecker] Failed to validate OAuth Token for {Enum.GetName(validateOn)}",
                     ConsoleUtil.LogLevel.Warn,
                     ConsoleColor.Yellow);
 
-                if (!autoRenew) return;
-                if (!RefreshToken(AuthType.TwitchChat)
-                        .GetAwaiter().GetResult())
+                if (AutomaticRefresh)
                 {
-                    throw new Exception("Unable to refresh Auth Token for TwitchChat, Application cannot continue!");
+                    if (!RefreshToken(validateOn).GetAwaiter().GetResult())
+                    {
+                        throw new Exception(
+                            $"Unable to refresh Auth Token for {Enum.GetName(validateOn)}");
+                    }
+                    return true;
                 }
+
+                return false;
             }
             else
             {
-                ConsoleUtil.WriteToConsole($"[OAuthChecker] Successfully validated TwitchChat OAuth Tokens, Expiry: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry}/UTC", ConsoleUtil.LogLevel.Info);
+                ConsoleUtil.WriteToConsole($"[OAuthChecker] Successfully validated OAuth Tokens for {Enum.GetName(validateOn)}, Expiry: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry}/UTC", ConsoleUtil.LogLevel.Info);
+                return true;
             }
+        }
 
-            if (!pubSubOAuth)
-            {
-                ConsoleUtil.WriteToConsole("[OAuthChecker] Failed to validate TwitchPubSub OAuth Token", ConsoleUtil.LogLevel.Warn, ConsoleColor.Yellow);
-
-                if (!autoRenew) return;
-                if (!RefreshToken(AuthType.PubSub)
-                    .GetAwaiter().GetResult())
-                {
-                    throw new Exception("Unable to refresh Auth Token for PubSub, Application cannot continue!");
-                }
-            }
-            else
-            {
-                ConsoleUtil.WriteToConsole($"[OAuthChecker] Successfully validated PubSub OAuth Tokens, Expiry: {ConfigurationHandler.Instance.Configuration.PubSub.TokenExpiry}/UTC", ConsoleUtil.LogLevel.Info);
-            }
+        public bool Validate(AuthType validateOn)
+        {
+            return Validate(validateOn, false);
         }
 
         public async Task<bool> RefreshToken(AuthType authType)
@@ -140,6 +136,7 @@ namespace TMRAgent.Twitch.Utility
                     switch (authType)
                     {
                         case AuthType.TwitchChat:
+                        case AuthType.LiveStreamMonitorService:
                             config.TwitchChat.AuthToken = refreshRequest.AccessToken;
                             config.TwitchChat.RefreshToken = refreshRequest.RefreshToken;
                             config.TwitchChat.TokenExpiry = DateTime.Now.ToUniversalTime().AddSeconds(refreshRequest.ExpiresIn);
@@ -191,6 +188,7 @@ namespace TMRAgent.Twitch.Utility
             switch (authType)
             {
                 case AuthType.TwitchChat:
+                case AuthType.LiveStreamMonitorService:
                     refreshToken = ConfigurationHandler.Instance.Configuration.TwitchChat.RefreshToken;
                     break;
 

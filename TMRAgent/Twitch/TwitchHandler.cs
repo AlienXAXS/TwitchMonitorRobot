@@ -8,7 +8,7 @@ namespace TMRAgent.Twitch
         public static TwitchHandler Instance = _instance ??= new TwitchHandler();
         private static readonly TwitchHandler? _instance;
 
-        public Auth Auth = new Auth();
+        public Auth Auth = new();
 
         public Chat.ChatHandler ChatHandler = new();
         public Events.LivestreamMonitorService LivestreamMonitorService = new();

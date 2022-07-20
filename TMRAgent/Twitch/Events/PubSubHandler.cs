@@ -1,4 +1,5 @@
 ﻿using System;
+using TMRAgent.Twitch.Utility;
 using TwitchLib.PubSub;
 using TwitchLib.PubSub.Events;
 
@@ -6,16 +7,33 @@ namespace TMRAgent.Twitch.Events
 {
     public class PubSubHandler : IDisposable
     {
-        private TwitchPubSub? _pubSubClient;
+        private readonly TwitchPubSub _pubSubClient = new TwitchPubSub();
 
-        public void StartPubSub()
+        public void Start()
         {
-            _pubSubClient = new TwitchPubSub();
+
+            // Validate OAuth Token
+            try
+            {
+                TwitchHandler.Instance.Auth.Validate(Auth.AuthType.PubSub, true);
+            }
+            catch (Exception ex)
+            {
+                ConsoleUtil.WriteToConsole($"[LivestreamMonitorService] Unable to connect to Twitch Livestream Monitoring.  OAuth Validation failed. Error: {ex.Message}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+                return;
+            }
+
             _pubSubClient.ListenToBitsEventsV2(ConfigurationHandler.Instance.Configuration.PubSub.ChannelId);
             _pubSubClient.ListenToChannelPoints(ConfigurationHandler.Instance.Configuration.PubSub.ChannelId);
             _pubSubClient.ListenToVideoPlayback(ConfigurationHandler.Instance.Configuration.PubSub.ChannelId);
 
-            _pubSubClient.OnPubSubServiceConnected += PubSubClient_OnPubSubServiceConnected!;
+            _pubSubClient.OnPubSubServiceConnected += (sender, args) =>
+            {
+                ConsoleUtil.WriteToConsole($"[Twitch-PubSub] Successfully Connected to Public Subscriptions",
+                    ConsoleUtil.LogLevel.Info);
+                _pubSubClient?.SendTopics(ConfigurationHandler.Instance.Configuration.PubSub.AuthToken);
+            };
+
             _pubSubClient.OnBitsReceivedV2 += PubSubClient_OnBitsReceivedV2!;
             _pubSubClient.OnChannelPointsRewardRedeemed += PubSubClient_OnChannelPointsRewardRedeemed!;
 
@@ -39,11 +57,15 @@ namespace TMRAgent.Twitch.Events
         private void PubSubClientOnOnPubSubServiceClosed(object? sender, EventArgs e)
         {
             ConsoleUtil.WriteToConsole($"[PubSubClientOnOnPubSubServiceClosed] State: Stopped", ConsoleUtil.LogLevel.Info);
+            if (!Program.ExitRequested)
+                Start();
         }
 
         private void PubSubClientOnOnPubSubServiceError(object? sender, OnPubSubServiceErrorArgs e)
         {
             ConsoleUtil.WriteToConsole($"[PubSubClientOnOnPubSubServiceError] Error: {e.Exception}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+            if (!Program.ExitRequested)
+                Start();
         }
 
         private void PubSubClient_OnStreamUp(object sender, OnStreamUpArgs e)
@@ -83,12 +105,6 @@ namespace TMRAgent.Twitch.Events
         private void PubSubClient_OnBitsReceivedV2(object? sender, OnBitsReceivedV2Args e)
         {
             //TODO: Finish this part lulz.
-        }
-
-        private void PubSubClient_OnPubSubServiceConnected(object? sender, EventArgs e)
-        {
-            ConsoleUtil.WriteToConsole($"[Twitch-PubSub] Successfully Connected to Public Subscriptions", ConsoleUtil.LogLevel.Info);
-            _pubSubClient?.SendTopics(ConfigurationHandler.Instance.Configuration.PubSub.AuthToken);
         }
 
         public void Dispose()

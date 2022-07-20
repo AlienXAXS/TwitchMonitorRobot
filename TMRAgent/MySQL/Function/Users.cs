@@ -7,7 +7,7 @@ namespace TMRAgent.MySQL.Function
 {
     internal class Users
     {
-        private Dictionary<string, int> _usernameMemory = new Dictionary<string, int>();
+        private Dictionary<string, int> _usernameMemory = new();
 
         public int GetUserId(string Username, int TwitchUserId, bool isModerator = false)
         {

@@ -12,8 +12,8 @@ namespace TMRAgent.Twitch
         public string? TwitchCallbackUrl;
         public string? ClientSecret;
 
-        public TwitchChatCls TwitchChat = new TwitchChatCls();
-        public PubSubCls PubSub = new PubSubCls();
+        public TwitchChatCls TwitchChat = new();
+        public PubSubCls PubSub = new();
 
         [Serializable]
         public class TwitchChatCls
@@ -43,7 +43,7 @@ namespace TMRAgent.Twitch
 
         private string _configFileName = "twitch.conf";
 
-        public Configuration Configuration = new Configuration();
+        public Configuration Configuration = new();
 
         public ConfigurationHandler()
         {

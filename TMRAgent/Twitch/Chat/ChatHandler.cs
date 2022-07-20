@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using TMRAgent.MySQL.Commands;
 using TMRAgent.Twitch.Utility;
 using TwitchLib.Client;
@@ -27,18 +28,34 @@ namespace TMRAgent.Twitch.Chat
 
         public void Connect()
         {
+            Task.Run(ConnectTask);
+        }
 
+        private Task ConnectTask()
+        {
+            // Validate OAuth Token
+            try
+            {
+                TwitchHandler.Instance.Auth.Validate(Auth.AuthType.TwitchChat, true);
+            }
+            catch (Exception ex)
+            {
+                ConsoleUtil.WriteToConsole($"[TwitchChat] Unable to connect to TwitchChat.  OAuth Validation failed. Error: {ex.Message}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+                return Task.CompletedTask;
+            }
 
-
-
-            ConnectionCredentials credentials = new ConnectionCredentials(ConfigurationHandler.Instance.Configuration.TwitchChat.Username, ConfigurationHandler.Instance.Configuration.TwitchChat.AuthToken);
+            
             var clientOptions = new ClientOptions
             {
                 MessagesAllowedInPeriod = 750,
-                ThrottlingPeriod = TimeSpan.FromSeconds(30)
+                ThrottlingPeriod = TimeSpan.FromSeconds(30),
+                ReconnectionPolicy = new ReconnectionPolicy(0, 0),
             };
+
             WebSocketClient customClient = new WebSocketClient(clientOptions);
             _client = new TwitchClient(customClient);
+
+            ConnectionCredentials credentials = new ConnectionCredentials(ConfigurationHandler.Instance.Configuration.TwitchChat.Username, ConfigurationHandler.Instance.Configuration.TwitchChat.AuthToken);
             _client.Initialize(credentials, ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName);
 
             // Log
@@ -70,6 +87,14 @@ namespace TMRAgent.Twitch.Chat
             _client.OnRitualNewChatter += Client_OnRitualNewChatter;
 
             _client.Connect();
+
+            return Task.CompletedTask;
+        }
+
+        private void SetCredentials()
+        {
+            ConnectionCredentials credentials = new ConnectionCredentials(ConfigurationHandler.Instance.Configuration.TwitchChat.Username, ConfigurationHandler.Instance.Configuration.TwitchChat.AuthToken);
+            _client?.SetConnectionCredentials(credentials);
         }
 
         private void ClientOnOnIncorrectLogin(object? sender, OnIncorrectLoginArgs e)
@@ -85,7 +110,8 @@ namespace TMRAgent.Twitch.Chat
                 if (TwitchHandler.Instance.Auth.RefreshToken(Auth.AuthType.TwitchChat).GetAwaiter().GetResult())
                 {
                     ConsoleUtil.WriteToConsole($"[TwitchChat] Token refresh successful, reconnecting to TwitchChat", ConsoleUtil.LogLevel.Info);
-                    Connect();
+                    SetCredentials();
+                    _client?.Connect();
                 }
                 else
                 {
@@ -104,7 +130,10 @@ namespace TMRAgent.Twitch.Chat
         {
             ConsoleUtil.WriteToConsole($"[TwitchClient] TwitchChat Client Connection Error!", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
             if (!Program.ExitRequested)
-                Connect();
+            {
+                SetCredentials();
+                _client?.Connect();
+            }
         }
 
         private void ClientOnOnNoPermissionError(object? sender, EventArgs e)
@@ -116,7 +145,10 @@ namespace TMRAgent.Twitch.Chat
         {
             ConsoleUtil.WriteToConsole($"[TwitchClient] TwitchChat Client has disconnected!", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
             if (!Program.ExitRequested)
-                Connect();
+            {
+                SetCredentials();
+                _client?.Connect();
+            }
         }
 
         private void Client_OnRitualNewChatter(object? sender, OnRitualNewChatterArgs e)
