@@ -1,16 +1,11 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using TwitchLib.Api;
 using TwitchLib.Api.Services;
 using TwitchLib.Api.Services.Events;
 using TwitchLib.Api.Services.Events.LiveStreamMonitor;
-using TwitchLib.PubSub;
-using TwitchLib.PubSub.Events;
 
 namespace TMRAgent.Twitch.Events
 {

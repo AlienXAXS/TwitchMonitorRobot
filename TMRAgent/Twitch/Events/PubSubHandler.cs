@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TwitchLib.Api.Services.Events.LiveStreamMonitor;
 using TwitchLib.PubSub;
 using TwitchLib.PubSub.Events;
 
@@ -18,6 +13,7 @@ namespace TMRAgent.Twitch.Events
             _pubSubClient = new TwitchPubSub();
             _pubSubClient.ListenToBitsEventsV2(ConfigurationHandler.Instance.Configuration.PubSub.ChannelId);
             _pubSubClient.ListenToChannelPoints(ConfigurationHandler.Instance.Configuration.PubSub.ChannelId);
+            _pubSubClient.ListenToVideoPlayback(ConfigurationHandler.Instance.Configuration.PubSub.ChannelId);
 
             _pubSubClient.OnPubSubServiceConnected += PubSubClient_OnPubSubServiceConnected!;
             _pubSubClient.OnBitsReceivedV2 += PubSubClient_OnBitsReceivedV2!;
@@ -50,17 +46,17 @@ namespace TMRAgent.Twitch.Events
             ConsoleUtil.WriteToConsole($"[PubSubClientOnOnPubSubServiceError] Error: {e.Exception}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
         }
 
-        private void PubSubClient_OnStreamUp(object sender, TwitchLib.PubSub.Events.OnStreamUpArgs e)
+        private void PubSubClient_OnStreamUp(object sender, OnStreamUpArgs e)
         {
             ConsoleUtil.WriteToConsole($"Stream {e.ChannelId} PubSub Event: StreamUp", ConsoleUtil.LogLevel.Info, ConsoleColor.Green);
         }
 
-        private void PubSubClient_OnStreamDown(object sender, TwitchLib.PubSub.Events.OnStreamDownArgs e)
+        private void PubSubClient_OnStreamDown(object sender, OnStreamDownArgs e)
         {
             ConsoleUtil.WriteToConsole($"Stream {e.ChannelId} PubSub Event: StreamDown", ConsoleUtil.LogLevel.Info, ConsoleColor.Green);
         }
 
-        private void PubSubClient_OnListenResponse(object sender, TwitchLib.PubSub.Events.OnListenResponseArgs e)
+        private void PubSubClient_OnListenResponse(object sender, OnListenResponseArgs e)
         {
             if (!e.Successful)
                 ConsoleUtil.WriteToConsole($"Failed to listen! Response: {e.Response.Error}", ConsoleUtil.LogLevel.Error);
@@ -68,7 +64,7 @@ namespace TMRAgent.Twitch.Events
                 ConsoleUtil.WriteToConsole($"Successfully hooked {e.Topic}!", ConsoleUtil.LogLevel.Info);
         }
 
-        private void PubSubClient_OnChannelPointsRewardRedeemed(object sender, TwitchLib.PubSub.Events.OnChannelPointsRewardRedeemedArgs e)
+        private void PubSubClient_OnChannelPointsRewardRedeemed(object sender, OnChannelPointsRewardRedeemedArgs e)
         {
             try
             {
@@ -84,7 +80,7 @@ namespace TMRAgent.Twitch.Events
             }
         }
 
-        private void PubSubClient_OnBitsReceivedV2(object? sender, TwitchLib.PubSub.Events.OnBitsReceivedV2Args e)
+        private void PubSubClient_OnBitsReceivedV2(object? sender, OnBitsReceivedV2Args e)
         {
             //TODO: Finish this part lulz.
         }
