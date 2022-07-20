@@ -34,14 +34,14 @@ namespace TMRAgent.MySQL.Commands
             }
             else
             {
-                Twitch.TwitchHandler.Instance.GetTwitchClient()
+                Twitch.TwitchHandler.Instance.ChatHandler.GetTwitchClient()
                     ?.SendMessage(chatMessage.Channel, "Invalid Usage: !!manage_user mark_as_mod/mark_as_hive Username");
             }
         }
 
         private void MarkUserAsModerator(ChatMessage chatMessage, string username)
         {
-            var tc = Twitch.TwitchHandler.Instance.GetTwitchClient();
+            var tc = Twitch.TwitchHandler.Instance.ChatHandler.GetTwitchClient();
             var user = MySQL.MySqlHandler.Instance.Users.GetUserByUsername(username);
 
             if (user != null)
@@ -53,17 +53,17 @@ namespace TMRAgent.MySQL.Commands
                         .Update();
                 }
 
-                tc.SendMessage(chatMessage.Channel, $"[BOT] Successfully marked {username} as a Moderator within TMR.");
+                tc?.SendMessage(chatMessage.Channel, $"[BOT] Successfully marked {username} as a Moderator within TMR.");
             }
             else
             {
-                tc.SendMessage(chatMessage.Channel, $"[BOT] Unable to mark {username} as a moderator, I cannot find this user in my database");
+                tc?.SendMessage(chatMessage.Channel, $"[BOT] Unable to mark {username} as a moderator, I cannot find this user in my database");
             }
         }
 
         private void MarkUserAsHive(ChatMessage chatMessage, string username)
         {
-            var tc = Twitch.TwitchHandler.Instance.GetTwitchClient();
+            var tc = Twitch.TwitchHandler.Instance.ChatHandler.GetTwitchClient();
             var user = MySQL.MySqlHandler.Instance.Users.GetUserByUsername(username);
 
             if (user != null)
@@ -75,11 +75,11 @@ namespace TMRAgent.MySQL.Commands
                         .Update();
                 }
 
-                tc.SendMessage(chatMessage.Channel, $"[BOT] Successfully marked {username} as a hive member within TMR.");
+                tc?.SendMessage(chatMessage.Channel, $"[BOT] Successfully marked {username} as a hive member within TMR.");
             }
             else
             {
-                tc.SendMessage(chatMessage.Channel, $"[BOT] Unable to mark {username} as a hive member, I cannot find this user in my database");
+                tc?.SendMessage(chatMessage.Channel, $"[BOT] Unable to mark {username} as a hive member, I cannot find this user in my database");
             }
         }
 

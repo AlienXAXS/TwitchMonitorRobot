@@ -7,7 +7,7 @@ namespace TMRAgent.MySQL.Commands
     {
         public void Handle(TwitchLib.Client.Models.ChatMessage message, string[] parameters)
         {
-            var tc = Twitch.TwitchHandler.Instance.GetTwitchClient();
+            var tc = Twitch.TwitchHandler.Instance.ChatHandler.GetTwitchClient();
 
             if (parameters.Length == 2)
             {
@@ -22,18 +22,18 @@ namespace TMRAgent.MySQL.Commands
                     {
                         db.ModCommands.Where(x => x.Command == commandToBeRemoved).Delete();
 
-                        tc.SendMessage(message.Channel, $"The command {commandToBeRemoved} has been successfully removed from the database");
+                        tc?.SendMessage(message.Channel, $"The command {commandToBeRemoved} has been successfully removed from the database");
                     }
                     else
                     {
-                        tc.SendMessage(message.Channel, $"The command {commandToBeRemoved} does not exist");
+                        tc?.SendMessage(message.Channel, $"The command {commandToBeRemoved} does not exist");
                     }
                 }
 
             }
             else
             {
-                tc.SendMessage(message.Channel, $"Invalid use of command");
+                tc?.SendMessage(message.Channel, $"Invalid use of command");
             }
         }
     }

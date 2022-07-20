@@ -7,6 +7,19 @@ namespace TMRAgent.MySQL.Function
 {
     internal class Streams
     {
+
+        public void CheckForStreamUpdate()
+        {
+            if (Twitch.TwitchHandler.Instance.LivestreamMonitorService.CurrentLiveStreamId != -1)
+            {
+                if (Twitch.TwitchHandler.Instance.LivestreamMonitorService.LastUpdateTime < DateTime.Now.ToUniversalTime().AddMinutes(-2))
+                {
+                    ProcessStreamUpdate();
+                    Twitch.TwitchHandler.Instance.LivestreamMonitorService.LastUpdateTime = DateTime.Now.ToUniversalTime();
+                }
+            }
+        }
+
         internal void ProcessStreamOnline(DateTime dateTime)
         {
             try
@@ -20,17 +33,17 @@ namespace TMRAgent.MySQL.Function
                     if (currentStream != null)
                     {
                         ConsoleUtil.WriteToConsole($"[StreamEvent] Found an existing row in the Database for this ongoing stream, using StreamID {currentStream.Id} (Stream Started At {currentStream.Start}).", ConsoleUtil.LogLevel.Info, ConsoleColor.Yellow);
-                        Twitch.TwitchLiveMonitor.Instance.CurrentLiveStreamId = currentStream.Id;
+                        Twitch.TwitchHandler.Instance.LivestreamMonitorService.CurrentLiveStreamId = currentStream.Id;
                         db.Query<dynamic>($"UPDATE `streams` SET `end` = NULL WHERE `streams`.`id` = {currentStream.Id};");
                     }
                     else
                     {
-                        Twitch.TwitchLiveMonitor.Instance.CurrentLiveStreamId = (int)db.Streams
+                        Twitch.TwitchHandler.Instance.LivestreamMonitorService.CurrentLiveStreamId = (int)db.Streams
                             .Value(p => p.Start, dateTime)
                             .Value(p => p.LastSeen, DateTime.Now.ToUniversalTime())
                             .InsertWithInt32Identity();
 
-                        Twitch.TwitchHandler.Instance.ProcessStreamOnline();
+                        Twitch.TwitchHandler.Instance.ChatHandler.ProcessStreamOnline();
                     }
                 }
             }
@@ -42,11 +55,11 @@ namespace TMRAgent.MySQL.Function
 
         internal void ProcessStreamUpdate()
         {
-            if (Twitch.TwitchLiveMonitor.Instance.CurrentLiveStreamId == -1) return;
+            if (Twitch.TwitchHandler.Instance.LivestreamMonitorService.CurrentLiveStreamId == -1) return;
 
             using (var db = new DBConnection.Database())
             {
-                db.Streams.Where(p => p.Id == Twitch.TwitchLiveMonitor.Instance.CurrentLiveStreamId)
+                db.Streams.Where(p => p.Id == Twitch.TwitchHandler.Instance.LivestreamMonitorService.CurrentLiveStreamId)
                     .Set(p => p.LastSeen, DateTime.Now.ToUniversalTime())
                     .Update();
             }
@@ -56,7 +69,7 @@ namespace TMRAgent.MySQL.Function
         {
             try
             {
-                if (Twitch.TwitchLiveMonitor.Instance.CurrentLiveStreamId == -1)
+                if (Twitch.TwitchHandler.Instance.LivestreamMonitorService.CurrentLiveStreamId == -1)
                 {
                     throw new Exception($"Current stream does not have a known ID, unable to set it offline!");
                 }
@@ -64,13 +77,13 @@ namespace TMRAgent.MySQL.Function
                 using (var db = new DBConnection.Database())
                 {
                     db.Streams
-                        .Where(p => p.Id == Twitch.TwitchLiveMonitor.Instance.CurrentLiveStreamId)
+                        .Where(p => p.Id == Twitch.TwitchHandler.Instance.LivestreamMonitorService.CurrentLiveStreamId)
                         .Set(p => p.End, dateTime)
                         .Set(p => p.Viewers, Viewers)
                         .Update();
                 }
 
-                Twitch.TwitchLiveMonitor.Instance.CurrentLiveStreamId = -1;
+                Twitch.TwitchHandler.Instance.LivestreamMonitorService.CurrentLiveStreamId = -1;
             }
             catch (Exception ex)
             {

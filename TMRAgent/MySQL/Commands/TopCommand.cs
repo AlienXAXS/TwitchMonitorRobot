@@ -11,7 +11,7 @@ namespace TMRAgent.MySQL.Commands
         {
             try
             {
-                var tc = Twitch.TwitchHandler.Instance.GetTwitchClient();
+                var tc = Twitch.TwitchHandler.Instance.ChatHandler.GetTwitchClient();
 
                 if (parameters.Length == 2)
                 {
@@ -34,7 +34,7 @@ namespace TMRAgent.MySQL.Commands
 
                                     returnMsg = returnMsg.Substring(0, returnMsg.Length - 2).Trim();
 
-                                    tc.SendMessage(Twitch.ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName, returnMsg);
+                                    tc?.SendMessage(Twitch.ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName, returnMsg);
                                 };
                             }
                             break;

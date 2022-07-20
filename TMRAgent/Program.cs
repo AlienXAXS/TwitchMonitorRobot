@@ -56,7 +56,6 @@ namespace TMRAgent
         {
             ExitRequested = true;
             Twitch.TwitchHandler.Instance.Dispose();
-            Twitch.TwitchLiveMonitor.Instance.Dispose();
         }
 
         private void StartMonitoringTwitch()
@@ -64,7 +63,7 @@ namespace TMRAgent
             ConsoleUtil.WriteToConsole("Starting Twitch Monitor", ConsoleUtil.LogLevel.Info);
             try
             {
-                Twitch.TwitchLiveMonitor.Instance.Start();
+                Twitch.TwitchHandler.Instance.LivestreamMonitorService.Start();
                 ConsoleUtil.WriteToConsole(" -> Success", ConsoleUtil.LogLevel.Info);
             }
             catch (Exception ex)
@@ -106,7 +105,7 @@ namespace TMRAgent
             ConsoleUtil.WriteToConsole("Connecting to Twitch", ConsoleUtil.LogLevel.Info);
             try
             {
-                Twitch.TwitchHandler.Instance.Connect();
+                Twitch.TwitchHandler.Instance.ChatHandler.Connect();
             }
             catch (Exception ex)
             {

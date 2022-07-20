@@ -4,7 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace TMRAgent.Twitch
+namespace TMRAgent.Twitch.Utility
 {
     internal class WebServerListerner : IDisposable
     {

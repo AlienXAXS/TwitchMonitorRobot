@@ -7,7 +7,7 @@ namespace TMRAgent.MySQL.Commands
     {
         public void Handle(TwitchLib.Client.Models.ChatMessage message, string[] parameters)
         {
-            var tc = Twitch.TwitchHandler.Instance.GetTwitchClient();
+            var tc = Twitch.TwitchHandler.Instance.ChatHandler.GetTwitchClient();
 
             if ( parameters.Length == 2)
             {
