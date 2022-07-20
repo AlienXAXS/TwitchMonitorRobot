@@ -1,0 +1,9 @@
+[submodule "External/TwitchLib.Api"]
+	path = External/TwitchLib.Api
+	url = https://github.com/TwitchLib/TwitchLib.Api.git
+[submodule "External/TwitchLib.Client"]
+	path = External/TwitchLib.Client
+	url = https://github.com/TwitchLib/TwitchLib.Client.git
+[submodule "External/TwitchLib.PubSub"]
+	path = External/TwitchLib.PubSub
+	url = https://github.com/TwitchLib/TwitchLib.PubSub.git
