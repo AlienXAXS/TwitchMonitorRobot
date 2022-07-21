@@ -116,7 +116,7 @@ namespace TMRAgent.Twitch.Chat
                 else
                 {
                     ConsoleUtil.WriteToConsole("[TwitchChat] Unable to refresh TwitchChat Token, Application will now exit.", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
-                    Program.QuitAppEvent.Set();
+                    Program.InvokeApplicationExit();
                 }
             }
         }
@@ -186,7 +186,7 @@ namespace TMRAgent.Twitch.Chat
         public void ProcessStreamOffline()
         {
             if (_client is not { IsConnected: true }) return;
-            _client.SendMessage(ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName!, $"[BOT] Stream Ended - Disabling Chat and Bit Event Hooks.");
+            _client.SendMessage(ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName!, $"[TMR-Agent-Bot] Stream Offline, Cleaning up bot cache and flushing database tables to disk.");
         }
 
         private void Client_OnMessageReceived(object? sender, OnMessageReceivedArgs e)
@@ -246,7 +246,7 @@ namespace TMRAgent.Twitch.Chat
                 case "!!shutdown":
                     if (!IsUserModeratorOrBroadcaster(chatMessage)) return;
                     _client.SendMessage(chatMessage.Channel, "TMR Shutting down now, Byeeee!");
-                    Program.QuitAppEvent.Set();
+                    Program.InvokeApplicationExit();
                     break;
 
                 case "!!manage_user":

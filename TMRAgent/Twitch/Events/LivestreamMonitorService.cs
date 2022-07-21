@@ -89,7 +89,7 @@ namespace TMRAgent.Twitch.Events
             ConsoleUtil.WriteToConsole("[StreamEvent] Stream is now marked as Offline, uploading stats to Database.", ConsoleUtil.LogLevel.Info, ConsoleColor.Yellow);
             MySQL.MySqlHandler.Instance.Streams.ProcessStreamOffline(DateTime.Now.ToUniversalTime(), e.Stream.ViewerCount);
             CurrentLiveStreamId = -1;
-            TwitchHandler.Instance.ChatHandler.ProcessStreamOffline();
+            TwitchHandler.Instance.ChatService.ProcessStreamOffline();
         }
 
         private void LiveStreamMonitorService_OnStreamOnline(object? sender, OnStreamOnlineArgs e)

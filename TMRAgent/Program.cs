@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
 using LinqToDB.Data;
@@ -7,44 +8,67 @@ namespace TMRAgent
 {
     internal class Program
     {
-        public static ManualResetEvent QuitAppEvent = new(false);
         public static bool ExitRequested = false;
 
         public static string Version = "0.1.4 Beta";
 
+        private readonly object _syncObject = new();
+
+        private static readonly ManualResetEvent _manualResetEvent = new(false);
+
         static void Main(string[] args)
         {
-            new Program().MainMethod();
+            Console.CancelKeyPress += (sender, args) =>
+            {
+                args.Cancel = true;
+                Task.Run(StopApp);
+                _manualResetEvent.WaitOne();
+            };
+
+            AssemblyLoadContext.Default.Unloading += context =>
+            {
+                Task.Run(StopApp);
+                _manualResetEvent.WaitOne();
+            };
+
+            Task.Run(StartApp);
+
+            _manualResetEvent.WaitOne();
         }
 
-        public void MainMethod()
+        public static void InvokeApplicationExit()
+        {
+            ConsoleUtil.WriteToConsole(" -> Application Exit Event Invoked... Shutting down!", ConsoleUtil.LogLevel.Info);
+            ExitRequested = true;
+            Task.Run(StopApp);
+            _manualResetEvent.WaitOne();
+        }
+
+        static void StopApp()
+        {
+            if (ExitRequested) return;
+
+            ExitRequested = true;
+            Twitch.TwitchHandler.Instance.Dispose();
+            _manualResetEvent.Set();
+            Environment.Exit(0);
+        }
+
+        static async Task StartApp()
         {
             DataConnection.DefaultSettings = new MySQL.DBConnection.MySettings();
-            AppDomain.CurrentDomain.ProcessExit += (sender, args) => HandleApplicationExitEvent();
-            Console.CancelKeyPress += (sender, args) => HandleApplicationExitEvent();
-            QuitAppEvent.Reset();
 
             ConsoleUtil.WriteToConsole($"Twitch Management Robot v{Version} Starting...", ConsoleUtil.LogLevel.Info);
 
-            CheckConfigurationValidity();
-
-            ConnectTwitchChat();
-
-            SetupMySqlBackend();
-
-            StartMonitoringTwitch();
+            await Task.Run(() =>
+            {
+                new Program().CheckConfigurationValidity();
+                new Program().ConnectTwitchChat();
+                new Program().SetupMySqlBackend();
+                new Program().StartMonitoringTwitch();
+            });
 
             ConsoleUtil.WriteToConsole("Application is ready!", ConsoleUtil.LogLevel.Info);
-
-            QuitAppEvent.WaitOne();
-
-            ShutdownApp();
-        }
-
-        private void ShutdownApp()
-        {
-            ExitRequested = true;
-            Twitch.TwitchHandler.Instance.Dispose();
         }
 
         private void StartMonitoringTwitch()
@@ -53,7 +77,7 @@ namespace TMRAgent
             try
             {
                 Twitch.TwitchHandler.Instance.LivestreamMonitorService.Start();
-                Twitch.TwitchHandler.Instance.PubSubHandler.Start();
+                Twitch.TwitchHandler.Instance.PubSubService.Start();
                 ConsoleUtil.WriteToConsole(" -> Success", ConsoleUtil.LogLevel.Info);
             }
             catch (Exception ex)
@@ -93,7 +117,7 @@ namespace TMRAgent
             ConsoleUtil.WriteToConsole("Connecting to Twitch", ConsoleUtil.LogLevel.Info);
             try
             {
-                Twitch.TwitchHandler.Instance.ChatHandler.Connect();
+                Twitch.TwitchHandler.Instance.ChatService.Connect();
             }
             catch (Exception ex)
             {
@@ -103,11 +127,6 @@ namespace TMRAgent
             ConsoleUtil.WriteToConsole(" -> Success", ConsoleUtil.LogLevel.Info);
         }
 
-        private void HandleApplicationExitEvent()
-        {
-            ConsoleUtil.WriteToConsole(" -> Application Exit Event Invoked... Shutting down!", ConsoleUtil.LogLevel.Info);
-            Task.Delay(1000).GetAwaiter().GetResult();
-            QuitAppEvent.Set();
-        }
+        
     }
 }

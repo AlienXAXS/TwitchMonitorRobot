@@ -10,15 +10,15 @@ namespace TMRAgent.Twitch
 
         public Auth Auth = new();
 
-        public Chat.ChatHandler ChatHandler = new();
+        public Chat.ChatHandler ChatService = new();
         public Events.LivestreamMonitorService LivestreamMonitorService = new();
-        public Events.PubSubHandler PubSubHandler = new();
+        public Events.PubSubHandler PubSubService = new();
 
         public void Dispose()
         {
-            ChatHandler.Dispose();
+            ChatService.Dispose();
             LivestreamMonitorService.Dispose();
-            PubSubHandler.Dispose();
+            PubSubService.Dispose();
         }
     }
 }

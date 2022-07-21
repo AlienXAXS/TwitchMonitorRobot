@@ -30,7 +30,7 @@ namespace TMRAgent.MySQL.DBConnection
                     {
                         Name = "TMRAgent",
                         ProviderName = ProviderName.MySql,
-                        ConnectionString = ConfigurationHandler.Instance.Configuration.ConnectionString
+                        ConnectionString = ConfigurationHandler.Instance.Configuration.ConnectionString!
                     };
             }
         }

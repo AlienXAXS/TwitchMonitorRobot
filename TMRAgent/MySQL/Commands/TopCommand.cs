@@ -11,7 +11,7 @@ namespace TMRAgent.MySQL.Commands
         {
             try
             {
-                var tc = Twitch.TwitchHandler.Instance.ChatHandler.GetTwitchClient();
+                var tc = Twitch.TwitchHandler.Instance.ChatService.GetTwitchClient();
 
                 if (parameters.Length == 2)
                 {

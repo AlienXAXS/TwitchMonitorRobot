@@ -76,6 +76,7 @@ namespace TMRAgent.Twitch.Events
         private void PubSubClient_OnStreamDown(object sender, OnStreamDownArgs e)
         {
             ConsoleUtil.WriteToConsole($"Stream {e.ChannelId} PubSub Event: StreamDown", ConsoleUtil.LogLevel.Info, ConsoleColor.Green);
+            MySQL.MySqlHandler.Instance.Streams.ProcessStreamOffline(DateTime.Now.ToUniversalTime(), null);
         }
 
         private void PubSubClient_OnListenResponse(object sender, OnListenResponseArgs e)

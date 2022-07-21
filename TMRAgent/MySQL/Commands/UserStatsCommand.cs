@@ -20,7 +20,7 @@ namespace TMRAgent.MySQL.Commands
                 
                 if ( userDb == null )
                 {
-                    Twitch.TwitchHandler.Instance.ChatHandler.GetTwitchClient()?.SendMessage(chatMessage.Channel, $"Sorry {chatMessage.DisplayName}, Something went wrong and I cannot get your stats!");
+                    Twitch.TwitchHandler.Instance.ChatService.GetTwitchClient()?.SendMessage(chatMessage.Channel, $"Sorry {chatMessage.DisplayName}, Something went wrong and I cannot get your stats!");
                     return;
                 }
 
@@ -41,7 +41,7 @@ namespace TMRAgent.MySQL.Commands
                     responseMessage = $"{responseMessage} {(parameters.Length == 2 ? "Their" : "Your")} most used command is {mostUsedCommand.Key} which {(parameters.Length == 2 ? "they've" : "you've")} used {mostUsedCommand.Count():n0} times!";
                 }
 
-                Twitch.TwitchHandler.Instance.ChatHandler.GetTwitchClient()?.SendMessage(chatMessage.Channel, responseMessage);
+                Twitch.TwitchHandler.Instance.ChatService.GetTwitchClient()?.SendMessage(chatMessage.Channel, responseMessage);
             }
         }
     }

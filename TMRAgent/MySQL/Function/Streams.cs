@@ -41,9 +41,9 @@ namespace TMRAgent.MySQL.Function
                         Twitch.TwitchHandler.Instance.LivestreamMonitorService.CurrentLiveStreamId = (int)db.Streams
                             .Value(p => p.Start, dateTime)
                             .Value(p => p.LastSeen, DateTime.Now.ToUniversalTime())
-                            .InsertWithInt32Identity();
+                            .InsertWithInt32Identity()!;
 
-                        Twitch.TwitchHandler.Instance.ChatHandler.ProcessStreamOnline();
+                        Twitch.TwitchHandler.Instance.ChatService.ProcessStreamOnline();
                     }
                 }
             }
@@ -65,13 +65,13 @@ namespace TMRAgent.MySQL.Function
             }
         }
 
-        internal void ProcessStreamOffline(DateTime dateTime, int Viewers)
+        internal void ProcessStreamOffline(DateTime dateTime, int? Viewers)
         {
             try
             {
                 if (Twitch.TwitchHandler.Instance.LivestreamMonitorService.CurrentLiveStreamId == -1)
                 {
-                    throw new Exception($"Current stream does not have a known ID, unable to set it offline!");
+                    return;
                 }
 
                 using (var db = new DBConnection.Database())

@@ -29,14 +29,14 @@ namespace TMRAgent.MySQL.Commands
             }
             else
             {
-                Twitch.TwitchHandler.Instance.ChatHandler.GetTwitchClient()
+                Twitch.TwitchHandler.Instance.ChatService.GetTwitchClient()
                     ?.SendMessage(chatMessage.Channel, "Invalid Usage: !!manage_user mark_as_mod/mark_as_hive Username");
             }
         }
 
         private void MarkUserAsModerator(ChatMessage chatMessage, string username)
         {
-            var tc = Twitch.TwitchHandler.Instance.ChatHandler.GetTwitchClient();
+            var tc = Twitch.TwitchHandler.Instance.ChatService.GetTwitchClient();
             var user = MySQL.MySqlHandler.Instance.Users.GetUserByUsername(username);
 
             if (user != null)
@@ -58,7 +58,7 @@ namespace TMRAgent.MySQL.Commands
 
         private void MarkUserAsHive(ChatMessage chatMessage, string username)
         {
-            var tc = Twitch.TwitchHandler.Instance.ChatHandler.GetTwitchClient();
+            var tc = Twitch.TwitchHandler.Instance.ChatService.GetTwitchClient();
             var user = MySQL.MySqlHandler.Instance.Users.GetUserByUsername(username);
 
             if (user != null)
