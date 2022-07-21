@@ -1,12 +1,16 @@
 [submodule "External/TwitchLib.Api"]
 	path = External/TwitchLib.Api
 	url = https://github.com/TwitchLib/TwitchLib.Api.git
+	ignore = dirty
 [submodule "External/TwitchLib.Client"]
 	path = External/TwitchLib.Client
 	url = https://github.com/TwitchLib/TwitchLib.Client.git
+	ignore = dirty
 [submodule "External/TwitchLib.PubSub"]
 	path = External/TwitchLib.PubSub
 	url = https://github.com/TwitchLib/TwitchLib.PubSub.git
+	ignore = dirty
 [submodule "External/TwitchLib.Communication"]
 	path = External/TwitchLib.Communication
 	url = https://github.com/TwitchLib/TwitchLib.Communication.git
+	ignore = dirty
