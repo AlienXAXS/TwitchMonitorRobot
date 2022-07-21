@@ -23,15 +23,15 @@ namespace TMRAgent.Twitch.Events
                 return;
             }
 
-            _pubSubClient.ListenToBitsEventsV2(ConfigurationHandler.Instance.Configuration.PubSub.ChannelId);
-            _pubSubClient.ListenToChannelPoints(ConfigurationHandler.Instance.Configuration.PubSub.ChannelId);
-            _pubSubClient.ListenToVideoPlayback(ConfigurationHandler.Instance.Configuration.PubSub.ChannelId);
+            _pubSubClient.ListenToBitsEventsV2(ConfigurationHandler.Instance.Configuration.PubSub.ChannelId!);
+            _pubSubClient.ListenToChannelPoints(ConfigurationHandler.Instance.Configuration.PubSub.ChannelId!);
+            _pubSubClient.ListenToVideoPlayback(ConfigurationHandler.Instance.Configuration.PubSub.ChannelId!);
 
             _pubSubClient.OnPubSubServiceConnected += (sender, args) =>
             {
                 ConsoleUtil.WriteToConsole($"[Twitch-PubSub] Successfully Connected to Public Subscriptions",
                     ConsoleUtil.LogLevel.Info);
-                _pubSubClient?.SendTopics(ConfigurationHandler.Instance.Configuration.PubSub.AuthToken);
+                _pubSubClient?.SendTopics(ConfigurationHandler.Instance.Configuration.PubSub.AuthToken!);
             };
 
             _pubSubClient.OnBitsReceivedV2 += PubSubClient_OnBitsReceivedV2!;

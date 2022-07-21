@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Org.BouncyCastle.Bcpg.Sig;
 
 namespace TMRAgent.Twitch.Utility
 {
@@ -16,21 +17,17 @@ namespace TMRAgent.Twitch.Utility
 
         public bool HasTokenExpired(AuthType authType)
         {
-
             switch (authType)
             {
                 case AuthType.TwitchChat:
                     return DateTime.Now.ToUniversalTime() >=
                            ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry;
-                    break;
                 case AuthType.PubSub:
                     return DateTime.Now.ToUniversalTime() >=
                            ConfigurationHandler.Instance.Configuration.PubSub.TokenExpiry;
-                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(authType), authType, null);
             }
-
         }
 
         public bool TestAuth(AuthType authType)

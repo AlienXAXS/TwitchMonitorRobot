@@ -55,8 +55,8 @@ namespace TMRAgent.Twitch.Chat
             WebSocketClient customClient = new WebSocketClient(clientOptions);
             _client = new TwitchClient(customClient);
 
-            ConnectionCredentials credentials = new ConnectionCredentials(ConfigurationHandler.Instance.Configuration.TwitchChat.Username, ConfigurationHandler.Instance.Configuration.TwitchChat.AuthToken);
-            _client.Initialize(credentials, ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName);
+            ConnectionCredentials credentials = new ConnectionCredentials(ConfigurationHandler.Instance.Configuration.TwitchChat.Username!, ConfigurationHandler.Instance.Configuration.TwitchChat.AuthToken!);
+            _client.Initialize(credentials, ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName!);
 
             // Log
             _client.OnLog += Client_OnLog!;
@@ -93,7 +93,7 @@ namespace TMRAgent.Twitch.Chat
 
         private void SetCredentials()
         {
-            ConnectionCredentials credentials = new ConnectionCredentials(ConfigurationHandler.Instance.Configuration.TwitchChat.Username, ConfigurationHandler.Instance.Configuration.TwitchChat.AuthToken);
+            ConnectionCredentials credentials = new ConnectionCredentials(ConfigurationHandler.Instance.Configuration.TwitchChat.Username!, ConfigurationHandler.Instance.Configuration.TwitchChat.AuthToken!);
             _client?.SetConnectionCredentials(credentials);
         }
 
@@ -180,13 +180,13 @@ namespace TMRAgent.Twitch.Chat
         {
             if (_client is not { IsConnected: true }) return;
 
-            _client.SendMessage(ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName, $"[BOT] Stream Started - Monitoring Chat and Bit Events.");
+            _client.SendMessage(ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName!, $"[BOT] Stream Started - Monitoring Chat and Bit Events.");
         }
 
         public void ProcessStreamOffline()
         {
             if (_client is not { IsConnected: true }) return;
-            _client.SendMessage(ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName, $"[BOT] Stream Ended - Disabling Chat and Bit Event Hooks.");
+            _client.SendMessage(ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName!, $"[BOT] Stream Ended - Disabling Chat and Bit Event Hooks.");
         }
 
         private void Client_OnMessageReceived(object? sender, OnMessageReceivedArgs e)
