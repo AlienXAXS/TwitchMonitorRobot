@@ -68,6 +68,7 @@ namespace TMRAgent.Twitch.Events
 
         private void PubSubClientOnOnPubSubServiceError(object? sender, OnPubSubServiceErrorArgs e)
         {
+            if (e.Exception.Message.Equals("The operation was canceled.")) return;
             ConsoleUtil.WriteToConsole($"[PubSubClientOnOnPubSubServiceError] Error: {e.Exception}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
         }
 
