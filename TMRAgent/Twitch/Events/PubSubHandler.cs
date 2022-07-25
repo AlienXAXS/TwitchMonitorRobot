@@ -29,10 +29,6 @@ namespace TMRAgent.Twitch.Events
 
             _pubSubClient.OnPubSubServiceConnected += (sender, args) =>
             {
-                ConsoleUtil.WriteToConsole($"[Twitch-PubSub] Successfully Connected to Public Subscriptions",
-                    ConsoleUtil.LogLevel.Info);
-
-                _pubSubClient?.SendTopics(ConfigurationHandler.Instance.Configuration.PubSub.AuthToken!, true);
                 _pubSubClient?.SendTopics(ConfigurationHandler.Instance.Configuration.PubSub.AuthToken!);
             };
 
