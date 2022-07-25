@@ -76,7 +76,6 @@ namespace TMRAgent
             ConsoleUtil.WriteToConsole("Starting Twitch Monitor", ConsoleUtil.LogLevel.Info);
             try
             {
-                Twitch.TwitchHandler.Instance.LivestreamMonitorService.Start();
                 Twitch.TwitchHandler.Instance.PubSubService.Start();
                 ConsoleUtil.WriteToConsole(" -> Success", ConsoleUtil.LogLevel.Info);
             }
@@ -84,6 +83,9 @@ namespace TMRAgent
             {
                 ConsoleUtil.WriteToConsole($"Fatal Error: {ex.Message}", ConsoleUtil.LogLevel.Error);
             }
+
+            ConsoleUtil.WriteToConsole("Checking for an existing stream", ConsoleUtil.LogLevel.Info);
+            Twitch.TwitchHandler.Instance.CheckForExistingStream();
         }
 
         private void SetupMySqlBackend()

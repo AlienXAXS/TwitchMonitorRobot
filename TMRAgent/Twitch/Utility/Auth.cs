@@ -194,7 +194,7 @@ namespace TMRAgent.Twitch.Utility
                     break;
             }
 
-            return refreshToken;
+            return refreshToken!;
         }
     }
 }

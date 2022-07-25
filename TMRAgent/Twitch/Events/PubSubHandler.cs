@@ -31,6 +31,8 @@ namespace TMRAgent.Twitch.Events
             {
                 ConsoleUtil.WriteToConsole($"[Twitch-PubSub] Successfully Connected to Public Subscriptions",
                     ConsoleUtil.LogLevel.Info);
+
+                _pubSubClient?.SendTopics(ConfigurationHandler.Instance.Configuration.PubSub.AuthToken!, true);
                 _pubSubClient?.SendTopics(ConfigurationHandler.Instance.Configuration.PubSub.AuthToken!);
             };
 
@@ -58,19 +60,21 @@ namespace TMRAgent.Twitch.Events
         {
             ConsoleUtil.WriteToConsole($"[PubSubClientOnOnPubSubServiceClosed] State: Stopped", ConsoleUtil.LogLevel.Info);
             if (!Program.ExitRequested)
-                Start();
+            {
+                _pubSubClient.Disconnect();
+                _pubSubClient.Connect();
+            }
         }
 
         private void PubSubClientOnOnPubSubServiceError(object? sender, OnPubSubServiceErrorArgs e)
         {
             ConsoleUtil.WriteToConsole($"[PubSubClientOnOnPubSubServiceError] Error: {e.Exception}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
-            if (!Program.ExitRequested)
-                Start();
         }
 
         private void PubSubClient_OnStreamUp(object sender, OnStreamUpArgs e)
         {
             ConsoleUtil.WriteToConsole($"Stream {e.ChannelId} PubSub Event: StreamUp", ConsoleUtil.LogLevel.Info, ConsoleColor.Green);
+            MySQL.MySqlHandler.Instance.Streams.ProcessStreamOnline(DateTime.Parse(e.ServerTime));
         }
 
         private void PubSubClient_OnStreamDown(object sender, OnStreamDownArgs e)

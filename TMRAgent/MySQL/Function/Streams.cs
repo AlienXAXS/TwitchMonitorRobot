@@ -10,12 +10,12 @@ namespace TMRAgent.MySQL.Function
 
         public void CheckForStreamUpdate()
         {
-            if (Twitch.TwitchHandler.Instance.LivestreamMonitorService.CurrentLiveStreamId != -1)
+            if (Twitch.TwitchHandler.Instance.CurrentLiveStreamId != null && Twitch.TwitchHandler.Instance.LastUpdateTime != null)
             {
-                if (Twitch.TwitchHandler.Instance.LivestreamMonitorService.LastUpdateTime < DateTime.Now.ToUniversalTime().AddMinutes(-2))
+                if (Twitch.TwitchHandler.Instance.LastUpdateTime < DateTime.Now.ToUniversalTime().AddMinutes(-2))
                 {
                     ProcessStreamUpdate();
-                    Twitch.TwitchHandler.Instance.LivestreamMonitorService.LastUpdateTime = DateTime.Now.ToUniversalTime();
+                    Twitch.TwitchHandler.Instance.LastUpdateTime = DateTime.Now.ToUniversalTime();
                 }
             }
         }
@@ -33,12 +33,12 @@ namespace TMRAgent.MySQL.Function
                     if (currentStream != null)
                     {
                         ConsoleUtil.WriteToConsole($"[StreamEvent] Found an existing row in the Database for this ongoing stream, using StreamID {currentStream.Id} (Stream Started At {currentStream.Start}).", ConsoleUtil.LogLevel.Info, ConsoleColor.Yellow);
-                        Twitch.TwitchHandler.Instance.LivestreamMonitorService.CurrentLiveStreamId = currentStream.Id;
+                        Twitch.TwitchHandler.Instance.CurrentLiveStreamId = currentStream.Id;
                         db.Query<dynamic>($"UPDATE `streams` SET `end` = NULL WHERE `streams`.`id` = {currentStream.Id};");
                     }
                     else
                     {
-                        Twitch.TwitchHandler.Instance.LivestreamMonitorService.CurrentLiveStreamId = (int)db.Streams
+                        Twitch.TwitchHandler.Instance.CurrentLiveStreamId = (int)db.Streams
                             .Value(p => p.Start, dateTime)
                             .Value(p => p.LastSeen, DateTime.Now.ToUniversalTime())
                             .InsertWithInt32Identity()!;
@@ -55,11 +55,11 @@ namespace TMRAgent.MySQL.Function
 
         internal void ProcessStreamUpdate()
         {
-            if (Twitch.TwitchHandler.Instance.LivestreamMonitorService.CurrentLiveStreamId == -1) return;
+            if (Twitch.TwitchHandler.Instance.CurrentLiveStreamId == -1) return;
 
             using (var db = new DBConnection.Database())
             {
-                db.Streams.Where(p => p.Id == Twitch.TwitchHandler.Instance.LivestreamMonitorService.CurrentLiveStreamId)
+                db.Streams.Where(p => p.Id == Twitch.TwitchHandler.Instance.CurrentLiveStreamId)
                     .Set(p => p.LastSeen, DateTime.Now.ToUniversalTime())
                     .Update();
             }
@@ -69,7 +69,7 @@ namespace TMRAgent.MySQL.Function
         {
             try
             {
-                if (Twitch.TwitchHandler.Instance.LivestreamMonitorService.CurrentLiveStreamId == -1)
+                if (Twitch.TwitchHandler.Instance.CurrentLiveStreamId == -1)
                 {
                     return;
                 }
@@ -77,13 +77,13 @@ namespace TMRAgent.MySQL.Function
                 using (var db = new DBConnection.Database())
                 {
                     db.Streams
-                        .Where(p => p.Id == Twitch.TwitchHandler.Instance.LivestreamMonitorService.CurrentLiveStreamId)
+                        .Where(p => p.Id == Twitch.TwitchHandler.Instance.CurrentLiveStreamId)
                         .Set(p => p.End, dateTime)
                         .Set(p => p.Viewers, Viewers)
                         .Update();
                 }
 
-                Twitch.TwitchHandler.Instance.LivestreamMonitorService.CurrentLiveStreamId = -1;
+                Twitch.TwitchHandler.Instance.CurrentLiveStreamId = -1;
             }
             catch (Exception ex)
             {
