@@ -39,9 +39,9 @@ namespace TMRAgent.Twitch.Events
             _pubSubClient.OnBitsReceivedV2 += PubSubClient_OnBitsReceivedV2!;
             _pubSubClient.OnChannelPointsRewardRedeemed += PubSubClient_OnChannelPointsRewardRedeemed!;
 
-            _pubSubClient.OnPubSubServiceError += PubSubClientOnOnPubSubServiceError;
-            _pubSubClient.OnPubSubServiceClosed += PubSubClientOnOnPubSubServiceClosed;
-            _pubSubClient.OnPubSubServiceConnected += PubSubClientOnOnPubSubServiceConnected;
+            _pubSubClient.OnPubSubServiceError += OnOnPubSubServiceError;
+            _pubSubClient.OnPubSubServiceClosed += OnOnPubSubServiceClosed;
+            _pubSubClient.OnPubSubServiceConnected += OnOnPubSubServiceConnected;
 
             _pubSubClient.OnStreamDown += PubSubClient_OnStreamDown!;
             _pubSubClient.OnStreamUp += PubSubClient_OnStreamUp!;
@@ -51,25 +51,24 @@ namespace TMRAgent.Twitch.Events
             _pubSubClient.Connect();
         }
 
-        private void PubSubClientOnOnPubSubServiceConnected(object? sender, EventArgs e)
+        private void OnOnPubSubServiceConnected(object? sender, EventArgs e)
         {
-            ConsoleUtil.WriteToConsole($"[PubSubClientOnOnPubSubServiceConnected] State: Started", ConsoleUtil.LogLevel.Info);
+            ConsoleUtil.WriteToConsole($"[OnPubSubServiceConnected] State: PubSub Service Websocket Connected", ConsoleUtil.LogLevel.Info);
         }
 
-        private void PubSubClientOnOnPubSubServiceClosed(object? sender, EventArgs e)
+        private void OnOnPubSubServiceClosed(object? sender, EventArgs e)
         {
-            ConsoleUtil.WriteToConsole($"[PubSubClientOnOnPubSubServiceClosed] State: Stopped", ConsoleUtil.LogLevel.Info);
+            ConsoleUtil.WriteToConsole($"[OnPubSubServiceClosed] State: Stopped", ConsoleUtil.LogLevel.Info);
             if (!Program.ExitRequested)
             {
-                _pubSubClient.Disconnect();
                 _pubSubClient.Connect();
             }
         }
 
-        private void PubSubClientOnOnPubSubServiceError(object? sender, OnPubSubServiceErrorArgs e)
+        private void OnOnPubSubServiceError(object? sender, OnPubSubServiceErrorArgs e)
         {
             if (e.Exception.Message.Equals("The operation was canceled.")) return;
-            ConsoleUtil.WriteToConsole($"[PubSubClientOnOnPubSubServiceError] Error: {e.Exception}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+            ConsoleUtil.WriteToConsole($"[OnPubSubServiceError] Error: {e.Exception}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
         }
 
         private void PubSubClient_OnStreamUp(object sender, OnStreamUpArgs e)
