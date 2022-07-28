@@ -13,10 +13,10 @@ namespace TMRAgent.MySQL.Models
         public DateTime Start { get; set; }
 
         [Column(Name = "end"), Nullable]
-        public DateTime End { get; set; }
+        public DateTime? End { get; set; }
 
         [Column(Name = "lastseen"), Nullable]
-        public DateTime LastSeen { get; set; }
+        public DateTime? LastSeen { get; set; }
 
         [Column(Name = "viewers"), Nullable]
         public int Viewers { get; set; }
