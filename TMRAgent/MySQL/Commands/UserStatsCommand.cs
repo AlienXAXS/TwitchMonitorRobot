@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using TwitchLib.Client.Models;
 
 namespace TMRAgent.MySQL.Commands
@@ -15,6 +16,12 @@ namespace TMRAgent.MySQL.Commands
                     userDb = db.Users.DefaultIfEmpty(null).FirstOrDefault(x => x.TwitchId == int.Parse(chatMessage.UserId));
                 } else
                 {
+                    if (parameters[1].ToLower().Equals("stream"))
+                    {
+                        HandleStreamStats(chatMessage);
+                        return;
+                    }
+
                     userDb = db.Users.DefaultIfEmpty(null).FirstOrDefault(x => x.Username == parameters[1]);
                 }
                 
@@ -40,6 +47,45 @@ namespace TMRAgent.MySQL.Commands
 
                     responseMessage = $"{responseMessage} {(parameters.Length == 2 ? "Their" : "Your")} most used command is {mostUsedCommand.Key} which {(parameters.Length == 2 ? "they've" : "you've")} used {mostUsedCommand.Count():n0} times!";
                 }
+
+                Twitch.TwitchHandler.Instance.ChatService.GetTwitchClient()?.SendMessage(chatMessage.Channel, responseMessage);
+            }
+        }
+
+        private void HandleStreamStats(ChatMessage chatMessage)
+        {
+
+            TimeSpan totalStreamDuration = new TimeSpan();
+
+            using (var db = new DBConnection.Database())
+            {
+                var allStreams = db.Streams;
+                
+                // Collect stats
+                var streamTotalCount = allStreams.Count();
+                foreach (var stream in allStreams.Where(x => x.End != null))
+                {
+                    var totalStreamLength = (stream.End - stream.Start);
+                    if (totalStreamLength.HasValue)
+                    {
+                        totalStreamDuration = totalStreamDuration.Add(totalStreamLength.Value);
+                    }
+                }
+
+                var responseMessage = "[TMR] Stream Stats: ";
+
+                if (Twitch.TwitchHandler.Instance.CurrentLiveStreamId != null)
+                {
+                    var currentStream =
+                        allStreams.First(x => x.Id.Equals(Twitch.TwitchHandler.Instance.CurrentLiveStreamId));
+                    var currentStreamDuration = (DateTime.Now.ToUniversalTime() - currentStream.Start);
+
+                    responseMessage =
+                        $"{responseMessage} Current stream up-time is {currentStreamDuration.Hours:n0}h {currentStreamDuration.Minutes:n0}m.";
+                }
+
+                responseMessage =
+                    $"{responseMessage} I have seen a total of {streamTotalCount} streams that have a total duration of {totalStreamDuration.Days:n0} days & {totalStreamDuration.Hours:n0} hours!";
 
                 Twitch.TwitchHandler.Instance.ChatService.GetTwitchClient()?.SendMessage(chatMessage.Channel, responseMessage);
             }
