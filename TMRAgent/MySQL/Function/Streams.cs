@@ -24,6 +24,7 @@ namespace TMRAgent.MySQL.Function
         {
             try
             {
+                ConsoleUtil.WriteToConsole($"[MySQL] ProcessStreamOnline Fired -> DateTime: {dateTime}", ConsoleUtil.LogLevel.Info);
                 using (var db = new DBConnection.Database())
                 {
                     var currentStreamDbEntry = db.Streams.DefaultIfEmpty(null).Where(x =>
@@ -42,6 +43,8 @@ namespace TMRAgent.MySQL.Function
                             .Value(p => p.Start, dateTime)
                             .Value(p => p.LastSeen, DateTime.Now.ToUniversalTime())
                             .InsertWithInt32Identity()!;
+
+                        ConsoleUtil.WriteToConsole($"New stream database entry created with ID {Twitch.TwitchHandler.Instance.CurrentLiveStreamId}", ConsoleUtil.LogLevel.Info);
 
                         Twitch.TwitchHandler.Instance.ChatService.ProcessStreamOnline();
                     }
