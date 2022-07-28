@@ -69,8 +69,8 @@ namespace TMRAgent.Twitch.Events
 
         private void PubSubClient_OnStreamUp(object sender, OnStreamUpArgs e)
         {
-            ConsoleUtil.WriteToConsole($"Stream {e.ChannelId} PubSub Event: StreamUp", ConsoleUtil.LogLevel.Info, ConsoleColor.Green);
-            MySQL.MySqlHandler.Instance.Streams.ProcessStreamOnline(DateTime.Parse(e.ServerTime));
+            ConsoleUtil.WriteToConsole($"Stream {e.ChannelId} PubSub Event: StreamUp on ChannelID: {e.ChannelId} @ {e.ServerTime} (Local Time: {DateTime.Now.ToUniversalTime()})", ConsoleUtil.LogLevel.Info, ConsoleColor.Green);
+            MySQL.MySqlHandler.Instance.Streams.ProcessStreamOnline(DateTime.Now.ToUniversalTime());
         }
 
         private void PubSubClient_OnStreamDown(object sender, OnStreamDownArgs e)
