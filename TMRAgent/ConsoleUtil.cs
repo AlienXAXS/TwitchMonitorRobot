@@ -5,10 +5,12 @@ namespace TMRAgent
 {
     public static class ConsoleUtil
     {
-        public static void WriteToConsole(string message, LogLevel logLevel, ConsoleColor foregroundColor = ConsoleColor.White, ConsoleColor backgroundColor = ConsoleColor.Black, [CallerMemberName] string callerName = "")
+        public static void WriteToConsole(string message, LogLevel logLevel, ConsoleColor foregroundColor = ConsoleColor.White, ConsoleColor backgroundColor = ConsoleColor.Black, [CallerMemberName] string callerName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumber = 0)
         {
             Console.ForegroundColor = foregroundColor;
             Console.BackgroundColor = backgroundColor;
+
+            callerFilePath = callerFilePath.Substring(callerFilePath.LastIndexOf('\\')+1);
 
             var dtNow = DateTime.Now;
 
@@ -17,7 +19,7 @@ namespace TMRAgent
             // Don't throw debug messages at Discord.
             if (logLevel == LogLevel.Debug) return;
 
-            Discord.Handler.SendWebhookMessage($"[{Enum.GetName(logLevel)}] {message}");
+            Discord.Handler.SendWebhookMessage($"[{callerFilePath}@{callerLineNumber}/{callerName}/T{System.Threading.Thread.CurrentThread.ManagedThreadId}] -> [{Enum.GetName(logLevel)}] {message}");
         }
 
         public enum LogLevel
