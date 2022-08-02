@@ -1,5 +1,7 @@
 ﻿using System;
 using TMRAgent.Twitch.Utility;
+using TwitchLib.Communication.Clients;
+using TwitchLib.Communication.Models;
 using TwitchLib.PubSub;
 using TwitchLib.PubSub.Events;
 
@@ -7,7 +9,7 @@ namespace TMRAgent.Twitch.Events
 {
     public class PubSubHandler : IDisposable
     {
-        private readonly TwitchPubSub _pubSubClient = new TwitchPubSub();
+        private TwitchPubSub? _pubSubClient;
 
         public void Start()
         {
@@ -22,6 +24,13 @@ namespace TMRAgent.Twitch.Events
                 ConsoleUtil.WriteToConsole($"[LivestreamMonitorService] Unable to connect to Twitch Livestream Monitoring.  OAuth Validation failed. Error: {ex.Message}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
                 return;
             }
+
+            var clientOptions = new ClientOptions
+            {
+                ReconnectionPolicy = null // Disable reconnection
+            };
+
+            _pubSubClient = new TwitchPubSub(ClientOptions: clientOptions);
 
             _pubSubClient.ListenToBitsEventsV2(ConfigurationHandler.Instance.Configuration.PubSub.ChannelId!);
             _pubSubClient.ListenToChannelPoints(ConfigurationHandler.Instance.Configuration.PubSub.ChannelId!);
@@ -57,7 +66,7 @@ namespace TMRAgent.Twitch.Events
             ConsoleUtil.WriteToConsole($"[OnPubSubServiceClosed] State: Stopped", ConsoleUtil.LogLevel.Info);
             if (!Program.ExitRequested)
             {
-                _pubSubClient.Connect();
+                _pubSubClient?.Connect();
             }
         }
 

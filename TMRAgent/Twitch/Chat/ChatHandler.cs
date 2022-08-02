@@ -19,6 +19,7 @@ namespace TMRAgent.Twitch.Chat
         private readonly UserManager _userManagerCommand = new();
         private readonly TopCommand _topCommand = new();
         private readonly UserStatsCommand _userStatsCommand = new();
+        private readonly StreamCommands _streamCommands = new();
 
         private TwitchClient? _client;
         public TwitchClient? GetTwitchClient()
@@ -40,20 +41,24 @@ namespace TMRAgent.Twitch.Chat
             }
             catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"[TwitchChat] Unable to connect to TwitchChat.  OAuth Validation failed. Error: {ex.Message}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+                ConsoleUtil.WriteToConsole(
+                    $"[TwitchChat] Unable to connect to TwitchChat.  OAuth Validation failed. Error: {ex.Message}",
+                    ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
                 return Task.CompletedTask;
             }
 
-            
             var clientOptions = new ClientOptions
             {
                 MessagesAllowedInPeriod = 750,
                 ThrottlingPeriod = TimeSpan.FromSeconds(30),
-                ReconnectionPolicy = new ReconnectionPolicy(0, 0),
+                ReconnectionPolicy = null // Disable reconnection
             };
 
             WebSocketClient customClient = new WebSocketClient(clientOptions);
-            _client = new TwitchClient(customClient);
+            _client = new TwitchClient(customClient)
+            {
+                AutoReListenOnException = false,
+            };
 
             ConnectionCredentials credentials = new ConnectionCredentials(ConfigurationHandler.Instance.Configuration.TwitchChat.Username!, ConfigurationHandler.Instance.Configuration.TwitchChat.AuthToken!);
             _client.Initialize(credentials, ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName!);
@@ -100,6 +105,7 @@ namespace TMRAgent.Twitch.Chat
         private void ClientOnOnIncorrectLogin(object? sender, OnIncorrectLoginArgs e)
         {
             if (_client == null) return;
+            if (Program.ExitRequested) return;
 
             ConsoleUtil.WriteToConsole($"[TwitchChat] Invalid/Expired Auth Credentials", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
             _client.Disconnect();
@@ -233,6 +239,11 @@ namespace TMRAgent.Twitch.Chat
 
             switch (parameters[0].ToLower())
             {
+                case "!!stream_online":
+                    if (!IsUserModeratorOrBroadcaster(chatMessage)) return;
+                    _streamCommands.HandleForceStreamOnline(chatMessage, parameters);
+                    break;
+
                 case "!!add_mod_action":
                     if (!IsUserModeratorOrBroadcaster(chatMessage)) return;
                     _addModeratorCommand.Handle(chatMessage, parameters);

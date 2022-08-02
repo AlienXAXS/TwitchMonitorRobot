@@ -20,22 +20,41 @@ namespace TMRAgent.MySQL.Function
             }
         }
 
-        internal void ProcessStreamOnline(DateTime dateTime)
+        internal void ProcessStreamOnline(DateTime dateTime, bool force = false)
         {
             try
             {
                 ConsoleUtil.WriteToConsole($"[MySQL] ProcessStreamOnline Fired -> DateTime: {dateTime}", ConsoleUtil.LogLevel.Info);
                 using (var db = new DBConnection.Database())
                 {
-                    var currentStreamDbEntry = db.Streams.DefaultIfEmpty(null).Where(x =>
-                        x.LastSeen.Between(DateTime.Now.ToUniversalTime().AddMinutes(-120),
-                            DateTime.Now.ToUniversalTime()) || x.Start.Equals(dateTime));
-                    var currentStream = currentStreamDbEntry.ToList().OrderBy(x => x.LastSeen).FirstOrDefault();
-                    if (currentStream != null)
+                    if (!force)
                     {
-                        ConsoleUtil.WriteToConsole($"[StreamEvent] Found an existing row in the Database for this ongoing stream, using StreamID {currentStream.Id} (Stream Started At {currentStream.Start}).", ConsoleUtil.LogLevel.Info, ConsoleColor.Yellow);
-                        Twitch.TwitchHandler.Instance.CurrentLiveStreamId = currentStream.Id;
-                        db.Query<dynamic>($"UPDATE `streams` SET `end` = NULL WHERE `streams`.`id` = {currentStream.Id};");
+                        var currentStreamDbEntry = db.Streams.DefaultIfEmpty(null).Where(x =>
+                            x.LastSeen.Between(DateTime.Now.ToUniversalTime().AddMinutes(-120),
+                                DateTime.Now.ToUniversalTime()) || x.Start.Equals(dateTime));
+                        var currentStream = currentStreamDbEntry.ToList().OrderBy(x => x.LastSeen).FirstOrDefault();
+                        if (currentStream != null)
+                        {
+                            ConsoleUtil.WriteToConsole(
+                                $"[StreamEvent] Found an existing row in the Database for this ongoing stream, using StreamID {currentStream.Id} (Stream Started At {currentStream.Start}).",
+                                ConsoleUtil.LogLevel.Info, ConsoleColor.Yellow);
+                            Twitch.TwitchHandler.Instance.CurrentLiveStreamId = currentStream.Id;
+                            db.Query<dynamic>(
+                                $"UPDATE `streams` SET `end` = NULL WHERE `streams`.`id` = {currentStream.Id};");
+                        }
+                        else
+                        {
+                            Twitch.TwitchHandler.Instance.CurrentLiveStreamId = (int) db.Streams
+                                .Value(p => p.Start, dateTime)
+                                .Value(p => p.LastSeen, DateTime.Now.ToUniversalTime())
+                                .InsertWithInt32Identity()!;
+
+                            ConsoleUtil.WriteToConsole(
+                                $"New stream database entry created with ID {Twitch.TwitchHandler.Instance.CurrentLiveStreamId}",
+                                ConsoleUtil.LogLevel.Info);
+
+                            Twitch.TwitchHandler.Instance.ChatService.ProcessStreamOnline();
+                        }
                     }
                     else
                     {
@@ -43,16 +62,28 @@ namespace TMRAgent.MySQL.Function
                             .Value(p => p.Start, dateTime)
                             .Value(p => p.LastSeen, DateTime.Now.ToUniversalTime())
                             .InsertWithInt32Identity()!;
-
-                        ConsoleUtil.WriteToConsole($"New stream database entry created with ID {Twitch.TwitchHandler.Instance.CurrentLiveStreamId}", ConsoleUtil.LogLevel.Info);
-
-                        Twitch.TwitchHandler.Instance.ChatService.ProcessStreamOnline();
                     }
                 }
             }
             catch (Exception ex)
             {
                 throw new Exception($"Unable to add current stream as being Online\r\n\r\n{ex.Message}");
+            }
+        }
+
+        public void CleanDirtyStreams()
+        {
+            using (var db = new DBConnection.Database())
+            {
+                var dirtyStreamList = db.Streams.Where(x => x.End == null).ToList();
+                foreach (var dirtyStream in dirtyStreamList)
+                {
+                    db.Streams.Where(x => x.Id.Equals(dirtyStream.Id))
+                        .Set(p => p.End, DateTime.Now.ToUniversalTime() - new TimeSpan(0, 2, 0, 0))
+                        .Set(p => p.LastSeen, DateTime.Now.ToUniversalTime() - new TimeSpan(0, 2, 0, 0))
+                        .Update();
+                    ConsoleUtil.WriteToConsole($"Cleaning Dirty Stream {dirtyStream.Id} which started at {dirtyStream.Start}!", ConsoleUtil.LogLevel.Info);
+                }
             }
         }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Mime;
 using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +19,12 @@ namespace TMRAgent
 
         static void Main(string[] args)
         {
+            AppDomain.CurrentDomain.ProcessExit += (sender, eventArgs) =>
+            {
+                Task.Run(StopApp);
+                _manualResetEvent.WaitOne();
+            };
+
             Console.CancelKeyPress += (sender, args) =>
             {
                 args.Cancel = true;
