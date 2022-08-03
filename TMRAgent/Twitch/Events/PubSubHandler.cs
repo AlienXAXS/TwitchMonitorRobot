@@ -25,12 +25,7 @@ namespace TMRAgent.Twitch.Events
                 return;
             }
 
-            var clientOptions = new ClientOptions
-            {
-                ReconnectionPolicy = null // Disable reconnection
-            };
-
-            _pubSubClient = new TwitchPubSub(ClientOptions: clientOptions);
+            _pubSubClient = new TwitchPubSub();
 
             _pubSubClient.ListenToBitsEventsV2(ConfigurationHandler.Instance.Configuration.PubSub.ChannelId!);
             _pubSubClient.ListenToChannelPoints(ConfigurationHandler.Instance.Configuration.PubSub.ChannelId!);
@@ -66,6 +61,18 @@ namespace TMRAgent.Twitch.Events
             ConsoleUtil.WriteToConsole($"[OnPubSubServiceClosed] State: Stopped", ConsoleUtil.LogLevel.Info);
             if (!Program.ExitRequested)
             {
+                try
+                {
+                    TwitchHandler.Instance.Auth.Validate(Auth.AuthType.PubSub, true);
+                }
+                catch (Exception ex)
+                {
+                    ConsoleUtil.WriteToConsole(
+                        $"[LivestreamMonitorService] Unable to connect to Twitch Livestream Monitoring.  OAuth Validation failed. Error: {ex.Message}",
+                        ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+                    return;
+                }
+
                 _pubSubClient?.Connect();
             }
         }

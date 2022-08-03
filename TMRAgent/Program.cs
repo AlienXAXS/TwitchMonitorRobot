@@ -11,7 +11,7 @@ namespace TMRAgent
     {
         public static bool ExitRequested = false;
 
-        public static string Version = "0.1.6 Beta";
+        public static string Version = "0.1.7 Beta";
 
         private readonly object _syncObject = new();
 
