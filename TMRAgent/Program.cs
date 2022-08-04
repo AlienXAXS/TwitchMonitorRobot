@@ -11,7 +11,7 @@ namespace TMRAgent
     {
         public static bool ExitRequested = false;
 
-        public static string Version = "0.1.7 Beta";
+        public static string Version = "0.1.8 Beta";
 
         private readonly object _syncObject = new();
 
@@ -54,6 +54,7 @@ namespace TMRAgent
         static void StopApp()
         {
             if (ExitRequested) return;
+            ConsoleUtil.WriteToConsole($"Application exit requested, starting shutdown sequence", ConsoleUtil.LogLevel.Info);
 
             ExitRequested = true;
             Twitch.TwitchHandler.Instance.Dispose();
