@@ -38,14 +38,23 @@ namespace TMRAgent.MySQL.Commands
                     redeemSpent = redeemSpent + bitRedeem.Cost;
                 }
 
-                var responseMessage = $"{chatMessage.DisplayName}: {(parameters.Length == 2 ? $"{userDb.Username} has" : "You've")} sent {messageCount:n0} chat messages and redeemed {redeemSpent:n0} Brain Cells!.";
+                var responseMessage = $"{chatMessage.DisplayName}: {(parameters.Length == 2 ? $"{userDb.Username} has" : "You've")} sent {messageCount:n0} chat messages";
+
+                if (redeemSpent > 0)
+                {
+                    responseMessage += " and redeemed {redeemSpent:n0} Brain Cells!.";
+                }
+                else
+                {
+                    responseMessage += ".";
+                }
 
                 var cmdsPreTable = db.Commands.AsEnumerable().Where(x => x.UserId == userDb.Id).GroupBy(x => x.Command);
                 if (cmdsPreTable.Count() != 0)
                 {
                     var mostUsedCommand = cmdsPreTable.OrderByDescending(x => x.Count()).First();
 
-                    responseMessage = $"{responseMessage} {(parameters.Length == 2 ? "Their" : "Your")} most used command is {mostUsedCommand.Key} which {(parameters.Length == 2 ? "they've" : "you've")} used {mostUsedCommand.Count():n0} times!";
+                    responseMessage += $" {(parameters.Length == 2 ? "Their" : "Your")} most used command is {mostUsedCommand.Key} which {(parameters.Length == 2 ? "they've" : "you've")} used {mostUsedCommand.Count():n0} times!";
                 }
 
                 Twitch.TwitchHandler.Instance.ChatService.GetTwitchClient()?.SendMessage(chatMessage.Channel, responseMessage);
