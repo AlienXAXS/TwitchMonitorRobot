@@ -61,7 +61,7 @@ namespace TMRAgent.Twitch.Chat
             };
 
             ConnectionCredentials credentials = new ConnectionCredentials(ConfigurationHandler.Instance.Configuration.TwitchChat.Username!, ConfigurationHandler.Instance.Configuration.TwitchChat.AuthToken!);
-            _client.Initialize(credentials, ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName!);
+            _client.Initialize(credentials);
 
             // Log
             _client.OnLog += Client_OnLog!;
@@ -82,6 +82,7 @@ namespace TMRAgent.Twitch.Chat
 
             // Messages
             _client.OnMessageReceived += Client_OnMessageReceived;
+            _client.OnWhisperReceived += ClientOnOnWhisperReceived;
 
             // Subscriptions
             _client.OnNewSubscriber += Client_OnNewSubscriber;
@@ -96,6 +97,14 @@ namespace TMRAgent.Twitch.Chat
             return Task.CompletedTask;
         }
 
+        private void ClientOnOnWhisperReceived(object? sender, OnWhisperReceivedArgs e)
+        {
+            if (e.WhisperMessage.Message.ToLower().Equals("ping"))
+            {
+                _client?.SendWhisper(e.WhisperMessage.Username, "[TMR] Pong!");
+            }
+        }
+
         private void SetCredentials()
         {
             ConnectionCredentials credentials = new ConnectionCredentials(ConfigurationHandler.Instance.Configuration.TwitchChat.Username!, ConfigurationHandler.Instance.Configuration.TwitchChat.AuthToken!);
@@ -108,7 +117,8 @@ namespace TMRAgent.Twitch.Chat
             if (Program.ExitRequested) return;
 
             ConsoleUtil.WriteToConsole($"[TwitchChat] Invalid/Expired Auth Credentials", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
-            _client.Disconnect();
+            
+            if (_client.IsConnected) _client.Disconnect();
 
             if (!TwitchHandler.Instance.Auth.TestAuth(Auth.AuthType.TwitchChat))
             {
@@ -134,17 +144,17 @@ namespace TMRAgent.Twitch.Chat
 
         private void ClientOnOnConnectionError(object? sender, OnConnectionErrorArgs e)
         {
-            ConsoleUtil.WriteToConsole($"[TwitchClient] TwitchChat Client Connection Error!", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+            ConsoleUtil.WriteToConsole($"[TwitchClient] TwitchChat Client Connection Error! -> {e.Error.Message}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
             if (!Program.ExitRequested)
             {
                 SetCredentials();
-                _client?.Connect();
+                _client?.Reconnect();
             }
         }
 
         private void ClientOnOnNoPermissionError(object? sender, EventArgs e)
         {
-
+            
         }
 
         private void Client_OnDisconnected(object? sender, TwitchLib.Communication.Events.OnDisconnectedEventArgs e)
@@ -175,18 +185,22 @@ namespace TMRAgent.Twitch.Chat
         private void Client_OnConnected(object? sender, OnConnectedArgs e)
         {
             ConsoleUtil.WriteToConsole($"[Twitch Bot] Connected to Twitch IRC", ConsoleUtil.LogLevel.Info);
+            if (!_client.JoinedChannels.Any(x =>
+                    x.Channel.Equals(ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName!)))
+            {
+                _client?.JoinChannel(ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName!);
+            }
         }
 
         private void Client_OnJoinedChannel(object? sender, OnJoinedChannelArgs e)
         {
             ConsoleUtil.WriteToConsole($"[Twitch Bot] Joined channel {e.Channel}", ConsoleUtil.LogLevel.Info);
-
         }
+
         public void ProcessStreamOnline()
         {
-            if (_client is not { IsConnected: true }) return;
-
-            _client.SendMessage(ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName!, $"[BOT] Stream Started - Monitoring Chat and Bit Events.");
+            if (_client is {IsConnected: false}) return;
+            _client?.SendMessage(ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName!, $"[BOT] Stream Started - Monitoring Chat and Bit Events.");
         }
 
         public void ProcessStreamOffline()
