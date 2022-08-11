@@ -160,7 +160,9 @@ namespace TMRAgent.Twitch.Chat
             Util.Log($"[TwitchClient] TwitchChat Client Connection Error! -> {e.Error.Message}", Util.LogLevel.Error, ConsoleColor.Red);
             if (!Program.ExitRequested)
             {
-                SetCredentials();
+                if (!CheckAuth())
+                    SetCredentials();
+
                 _client?.Reconnect();
             }
         }
@@ -175,7 +177,9 @@ namespace TMRAgent.Twitch.Chat
             Util.Log($"[TwitchClient] TwitchChat Client has disconnected!", Util.LogLevel.Error, ConsoleColor.Red);
             if (!Program.ExitRequested)
             {
-                SetCredentials();
+                if (!CheckAuth())
+                    SetCredentials();
+
                 _client?.Connect();
             }
         }
