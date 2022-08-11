@@ -41,9 +41,9 @@ namespace TMRAgent.Twitch.Chat
             }
             catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole(
+                Util.Log(
                     $"[TwitchChat] Unable to connect to TwitchChat.  OAuth Validation failed. Error: {ex.Message}",
-                    ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+                    Util.LogLevel.Error, ConsoleColor.Red);
                 return Task.CompletedTask;
             }
 
@@ -88,7 +88,7 @@ namespace TMRAgent.Twitch.Chat
             _client.OnNewSubscriber += Client_OnNewSubscriber;
             _client.OnReSubscriber += ClientOnOnReSubscriber;
             _client.OnGiftedSubscription += Client_OnGiftedSubscription;
-
+            
             // Tests
             _client.OnRitualNewChatter += Client_OnRitualNewChatter;
 
@@ -97,11 +97,24 @@ namespace TMRAgent.Twitch.Chat
             return Task.CompletedTask;
         }
 
+        private bool CheckAuth()
+        {
+            return TwitchHandler.Instance.Auth.TestAuth(Auth.AuthType.TwitchChat);
+        }
+
         private void ClientOnOnWhisperReceived(object? sender, OnWhisperReceivedArgs e)
         {
             if (e.WhisperMessage.Message.ToLower().Equals("ping"))
             {
-                _client?.SendWhisper(e.WhisperMessage.Username, "[TMR] Pong!");
+                if (e.WhisperMessage.Username.ToLower().Equals("mind1"))
+                {
+                    _client?.SendWhisper(e.WhisperMessage.Username, "Hi Dad, HOW DARE you ping me!");
+                    _client?.SendWhisper(e.WhisperMessage.Username, "[TMR] Oh yeah... Pong!");
+                }
+                else
+                {
+                    _client?.SendWhisper(e.WhisperMessage.Username, "[TMR] Pong!");
+                }
             }
         }
 
@@ -116,22 +129,22 @@ namespace TMRAgent.Twitch.Chat
             if (_client == null) return;
             if (Program.ExitRequested) return;
 
-            ConsoleUtil.WriteToConsole($"[TwitchChat] Invalid/Expired Auth Credentials", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+            Util.Log($"[TwitchChat] Invalid/Expired Auth Credentials", Util.LogLevel.Error, ConsoleColor.Red);
             
             if (_client.IsConnected) _client.Disconnect();
 
             if (!TwitchHandler.Instance.Auth.TestAuth(Auth.AuthType.TwitchChat))
             {
-                ConsoleUtil.WriteToConsole("[TwitchChat] Attemtping a token refresh", ConsoleUtil.LogLevel.Info);
+                Util.Log("[TwitchChat] Attemtping a token refresh", Util.LogLevel.Info);
                 if (TwitchHandler.Instance.Auth.RefreshToken(Auth.AuthType.TwitchChat).GetAwaiter().GetResult())
                 {
-                    ConsoleUtil.WriteToConsole($"[TwitchChat] Token refresh successful, reconnecting to TwitchChat", ConsoleUtil.LogLevel.Info);
+                    Util.Log($"[TwitchChat] Token refresh successful, reconnecting to TwitchChat", Util.LogLevel.Info);
                     SetCredentials();
                     _client?.Connect();
                 }
                 else
                 {
-                    ConsoleUtil.WriteToConsole("[TwitchChat] Unable to refresh TwitchChat Token, Application will now exit.", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+                    Util.Log("[TwitchChat] Unable to refresh TwitchChat Token, Application will now exit.", Util.LogLevel.Error, ConsoleColor.Red);
                     Program.InvokeApplicationExit();
                 }
             }
@@ -139,12 +152,12 @@ namespace TMRAgent.Twitch.Chat
 
         private void ClientOnOnFailureToReceiveJoinConfirmation(object? sender, OnFailureToReceiveJoinConfirmationArgs e)
         {
-            ConsoleUtil.WriteToConsole($"[TwitchClient] Failed to join channel {e.Exception.Channel}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+            Util.Log($"[TwitchClient] Failed to join channel {e.Exception.Channel}", Util.LogLevel.Error, ConsoleColor.Red);
         }
 
         private void ClientOnOnConnectionError(object? sender, OnConnectionErrorArgs e)
         {
-            ConsoleUtil.WriteToConsole($"[TwitchClient] TwitchChat Client Connection Error! -> {e.Error.Message}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+            Util.Log($"[TwitchClient] TwitchChat Client Connection Error! -> {e.Error.Message}", Util.LogLevel.Error, ConsoleColor.Red);
             if (!Program.ExitRequested)
             {
                 SetCredentials();
@@ -159,7 +172,7 @@ namespace TMRAgent.Twitch.Chat
 
         private void Client_OnDisconnected(object? sender, TwitchLib.Communication.Events.OnDisconnectedEventArgs e)
         {
-            ConsoleUtil.WriteToConsole($"[TwitchClient] TwitchChat Client has disconnected!", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+            Util.Log($"[TwitchClient] TwitchChat Client has disconnected!", Util.LogLevel.Error, ConsoleColor.Red);
             if (!Program.ExitRequested)
             {
                 SetCredentials();
@@ -169,7 +182,7 @@ namespace TMRAgent.Twitch.Chat
 
         private void Client_OnRitualNewChatter(object? sender, OnRitualNewChatterArgs e)
         {
-            ConsoleUtil.WriteToConsole($"Possible First Time Chatter: {e.RitualNewChatter.DisplayName}", ConsoleUtil.LogLevel.Info, ConsoleColor.Cyan);
+            Util.Log($"Possible First Time Chatter: {e.RitualNewChatter.DisplayName}", Util.LogLevel.Info, ConsoleColor.Cyan);
         }
 
         private void ClientOnOnChannelStateChanged(object? sender, OnChannelStateChangedArgs e)
@@ -184,8 +197,8 @@ namespace TMRAgent.Twitch.Chat
 
         private void Client_OnConnected(object? sender, OnConnectedArgs e)
         {
-            ConsoleUtil.WriteToConsole($"[Twitch Bot] Connected to Twitch IRC", ConsoleUtil.LogLevel.Info);
-            if (!_client.JoinedChannels.Any(x =>
+            Util.Log($"[Twitch Bot] Connected to Twitch IRC", Util.LogLevel.Info);
+            if (_client != null && !_client.JoinedChannels.Any(x =>
                     x.Channel.Equals(ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName!)))
             {
                 _client?.JoinChannel(ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName!);
@@ -194,7 +207,7 @@ namespace TMRAgent.Twitch.Chat
 
         private void Client_OnJoinedChannel(object? sender, OnJoinedChannelArgs e)
         {
-            ConsoleUtil.WriteToConsole($"[Twitch Bot] Joined channel {e.Channel}", ConsoleUtil.LogLevel.Info);
+            Util.Log($"[Twitch Bot] Joined channel {e.Channel}", Util.LogLevel.Info);
         }
 
         public void ProcessStreamOnline()

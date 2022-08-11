@@ -48,10 +48,9 @@ namespace TMRAgent.Twitch.Utility
                 case AuthType.LiveStreamMonitorService:
                     if (ConfigurationHandler.Instance.Configuration.TwitchChat.RefreshToken == null ||
                         ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry == null ||
-                        DateTime.Now.ToUniversalTime() >=
-                        ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry)
+                        HasTokenExpired(authType))
                     {
-                        ConsoleUtil.WriteToConsole($"[OAuthChecker] {Enum.GetName(authType)} Token has expired, marking it as dirty! (exp: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry})", ConsoleUtil.LogLevel.Info);
+                        Util.Log($"[OAuthChecker] {Enum.GetName(authType)} Token has expired, marking it as dirty! (exp: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry})", Util.LogLevel.Info);
                         return false;
                     }
 
@@ -60,10 +59,9 @@ namespace TMRAgent.Twitch.Utility
                 case AuthType.PubSub:
                     if (ConfigurationHandler.Instance.Configuration.PubSub.RefreshToken == null ||
                         ConfigurationHandler.Instance.Configuration.PubSub.TokenExpiry == null ||
-                        DateTime.Now.ToUniversalTime() >=
-                        ConfigurationHandler.Instance.Configuration.PubSub.TokenExpiry)
+                        HasTokenExpired(authType))
                     {
-                        ConsoleUtil.WriteToConsole($"[OAuthChecker] {Enum.GetName(authType)} Token has expired, marking it as dirty! (exp: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry})", ConsoleUtil.LogLevel.Info);
+                        Util.Log($"[OAuthChecker] {Enum.GetName(authType)} Token has expired, marking it as dirty! (exp: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry})", Util.LogLevel.Info);
                         return false;
                     }
 
@@ -82,13 +80,13 @@ namespace TMRAgent.Twitch.Utility
 
         public bool Validate(AuthType validateOn, bool AutomaticRefresh)
         {
-            ConsoleUtil.WriteToConsole($"[OAuthChecker] Checking OAuth Tokens Validity for {Enum.GetName(validateOn)}", ConsoleUtil.LogLevel.Info);
+            Util.Log($"[OAuthChecker] Checking OAuth Tokens Validity for {Enum.GetName(validateOn)}", Util.LogLevel.Info);
             var validationResult = TestAuth(validateOn);
 
             if (!validationResult)
             {
-                ConsoleUtil.WriteToConsole($"[OAuthChecker] Failed to validate OAuth Token for {Enum.GetName(validateOn)}",
-                    ConsoleUtil.LogLevel.Warn,
+                Util.Log($"[OAuthChecker] Failed to validate OAuth Token for {Enum.GetName(validateOn)}",
+                    Util.LogLevel.Warn,
                     ConsoleColor.Yellow);
 
                 if (AutomaticRefresh)
@@ -105,7 +103,7 @@ namespace TMRAgent.Twitch.Utility
             }
             else
             {
-                ConsoleUtil.WriteToConsole($"[OAuthChecker] Successfully validated OAuth Tokens for {Enum.GetName(validateOn)}, Expiry: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry}/UTC", ConsoleUtil.LogLevel.Info);
+                Util.Log($"[OAuthChecker] Successfully validated OAuth Tokens for {Enum.GetName(validateOn)}, Expiry: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry}/UTC", Util.LogLevel.Info);
                 return true;
             }
         }
@@ -147,7 +145,7 @@ namespace TMRAgent.Twitch.Utility
                             throw new ArgumentOutOfRangeException(nameof(authType), authType, null);
                     }
                     
-                    ConsoleUtil.WriteToConsole($"[OAuthRefresh] Successfully refreshed OAuth Tokens for {Enum.GetName(authType)}", ConsoleUtil.LogLevel.Info);
+                    Util.Log($"[OAuthRefresh] Successfully refreshed OAuth Tokens for {Enum.GetName(authType)}", Util.LogLevel.Info);
 
                     ConfigurationHandler.Instance.Save();
                     return true;
@@ -155,7 +153,7 @@ namespace TMRAgent.Twitch.Utility
             }
             catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"[OAuthRefresh] Error while handling an OAuth Token Refresh for {Enum.GetName(authType)}: {ex.Message}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+                Util.Log($"[OAuthRefresh] Error while handling an OAuth Token Refresh for {Enum.GetName(authType)}: {ex.Message}", Util.LogLevel.Error, ConsoleColor.Red);
                 return false;
             }
 

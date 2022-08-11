@@ -13,7 +13,6 @@ namespace TMRAgent.Twitch.Events
 
         public void Start()
         {
-
             // Validate OAuth Token
             try
             {
@@ -21,7 +20,7 @@ namespace TMRAgent.Twitch.Events
             }
             catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"[LivestreamMonitorService] Unable to connect to Twitch Livestream Monitoring.  OAuth Validation failed. Error: {ex.Message}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+                Util.Log($"[LivestreamMonitorService] Unable to connect to Twitch Livestream Monitoring.  OAuth Validation failed. Error: {ex.Message}", Util.LogLevel.Error, ConsoleColor.Red);
                 return;
             }
 
@@ -48,17 +47,19 @@ namespace TMRAgent.Twitch.Events
 
             _pubSubClient.OnListenResponse += PubSubClient_OnListenResponse!;
 
+            _pubSubClient.OnLog += (sender, args) => MySQL.MySqlHandler.Instance.Streams.CheckForStreamUpdate();
+
             _pubSubClient.Connect();
         }
 
         private void OnOnPubSubServiceConnected(object? sender, EventArgs e)
         {
-            ConsoleUtil.WriteToConsole($"[OnPubSubServiceConnected] State: PubSub Service Websocket Connected", ConsoleUtil.LogLevel.Info);
+            Util.Log($"[OnPubSubServiceConnected] State: PubSub Service Websocket Connected", Util.LogLevel.Info);
         }
 
         private void OnOnPubSubServiceClosed(object? sender, EventArgs e)
         {
-            ConsoleUtil.WriteToConsole($"[OnPubSubServiceClosed] State: Stopped", ConsoleUtil.LogLevel.Info);
+            Util.Log($"[OnPubSubServiceClosed] State: Stopped", Util.LogLevel.Info);
             if (!Program.ExitRequested)
             {
                 try
@@ -67,40 +68,44 @@ namespace TMRAgent.Twitch.Events
                 }
                 catch (Exception ex)
                 {
-                    ConsoleUtil.WriteToConsole(
+                    Util.Log(
                         $"[LivestreamMonitorService] Unable to connect to Twitch Livestream Monitoring.  OAuth Validation failed. Error: {ex.Message}",
-                        ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+                        Util.LogLevel.Error, ConsoleColor.Red);
                     return;
                 }
 
                 _pubSubClient?.Connect();
+            }
+            else
+            {
+                _pubSubClient?.SendTopics(ConfigurationHandler.Instance.Configuration.PubSub.AuthToken!, true);
             }
         }
 
         private void OnOnPubSubServiceError(object? sender, OnPubSubServiceErrorArgs e)
         {
             if (e.Exception.Message.Equals("The operation was canceled.")) return;
-            ConsoleUtil.WriteToConsole($"[OnPubSubServiceError] Error: {e.Exception}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+            Util.Log($"[OnPubSubServiceError] Error: {e.Exception}", Util.LogLevel.Error, ConsoleColor.Red);
         }
 
         private void PubSubClient_OnStreamUp(object sender, OnStreamUpArgs e)
         {
-            ConsoleUtil.WriteToConsole($"Stream {e.ChannelId} PubSub Event: StreamUp on ChannelID: {e.ChannelId} @ {e.ServerTime} (Local Time: {DateTime.Now.ToUniversalTime()})", ConsoleUtil.LogLevel.Info, ConsoleColor.Green);
+            Util.Log($"Stream {e.ChannelId} PubSub Event: StreamUp on ChannelID: {e.ChannelId} @ {e.ServerTime} (Local Time: {DateTime.Now.ToUniversalTime()})", Util.LogLevel.Info, ConsoleColor.Green);
             MySQL.MySqlHandler.Instance.Streams.ProcessStreamOnline(DateTime.Now.ToUniversalTime());
         }
 
         private void PubSubClient_OnStreamDown(object sender, OnStreamDownArgs e)
         {
-            ConsoleUtil.WriteToConsole($"Stream {e.ChannelId} PubSub Event: StreamDown", ConsoleUtil.LogLevel.Info, ConsoleColor.Green);
+            Util.Log($"Stream {e.ChannelId} PubSub Event: StreamDown", Util.LogLevel.Info, ConsoleColor.Green);
             MySQL.MySqlHandler.Instance.Streams.ProcessStreamOffline(DateTime.Now.ToUniversalTime(), null);
         }
 
         private void PubSubClient_OnListenResponse(object sender, OnListenResponseArgs e)
         {
             if (!e.Successful)
-                ConsoleUtil.WriteToConsole($"Failed to listen! Response: {e.Response.Error}", ConsoleUtil.LogLevel.Error);
+                Util.Log($"Failed to listen! Response: {e.Response.Error}", Util.LogLevel.Error);
             else
-                ConsoleUtil.WriteToConsole($"Successfully hooked {e.Topic}!", ConsoleUtil.LogLevel.Info);
+                Util.Log($"Successfully hooked {e.Topic}!", Util.LogLevel.Info);
         }
 
         private void PubSubClient_OnChannelPointsRewardRedeemed(object sender, OnChannelPointsRewardRedeemedArgs e)
@@ -115,7 +120,7 @@ namespace TMRAgent.Twitch.Events
             }
             catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"[Error] PubSubClient_OnChannelPointsRewardRedeemed -> {ex.Message}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+                Util.Log($"[Error] PubSubClient_OnChannelPointsRewardRedeemed -> {ex.Message}", Util.LogLevel.Error, ConsoleColor.Red);
             }
         }
 

@@ -14,7 +14,7 @@ namespace TMRAgent.MySQL.Function
             }
             catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"Exception:\r\n{ex.Message}", ConsoleUtil.LogLevel.Error);
+                Util.Log($"Exception:\r\n{ex.Message}", Util.LogLevel.Error);
                 return;
             }
 
@@ -33,7 +33,7 @@ namespace TMRAgent.MySQL.Function
             }
             catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"Exception:\r\n{ex.Message}", ConsoleUtil.LogLevel.Error);
+                Util.Log($"Exception:\r\n{ex.Message}", Util.LogLevel.Error);
             }
         }
     }

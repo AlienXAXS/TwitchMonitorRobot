@@ -21,12 +21,12 @@ namespace TMRAgent.MySQL
             {
                 using ( var db = new DBConnection.Database() )
                 {
-                    ConsoleUtil.WriteToConsole($"DB Version: {db.Connection.ServerVersion}", ConsoleUtil.LogLevel.Info);  
+                    Util.Log($"DB Version: {db.Connection.ServerVersion}", Util.LogLevel.Info);  
                 }
             }
             catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"Fatal Error: {ex.Message}\r\n\r\n{ex.StackTrace}", ConsoleUtil.LogLevel.Fatal, ConsoleColor.Red);
+                Util.Log($"Fatal Error: {ex.Message}\r\n\r\n{ex.StackTrace}", Util.LogLevel.Fatal, ConsoleColor.Red);
             }
         }
 

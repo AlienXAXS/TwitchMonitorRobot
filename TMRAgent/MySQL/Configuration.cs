@@ -32,7 +32,7 @@ namespace TMRAgent.MySQL
             }
             catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"Fatal Error: {ex.Message}\r\n\r\n{ex.StackTrace}", ConsoleUtil.LogLevel.Fatal, ConsoleColor.Red);
+                Util.Log($"Fatal Error: {ex.Message}\r\n\r\n{ex.StackTrace}", Util.LogLevel.Fatal, ConsoleColor.Red);
             }
         }
 
@@ -51,7 +51,7 @@ namespace TMRAgent.MySQL
                 {
                     Configuration =
                         JsonConvert.DeserializeObject<Configuration>(System.IO.File.ReadAllText(_configFileName));
-                    ConsoleUtil.WriteToConsole($"Configuration file {_configFileName} loaded", ConsoleUtil.LogLevel.Info);
+                    Util.Log($"Configuration file {_configFileName} loaded", Util.LogLevel.Info);
                 }
                 else
                 {
@@ -60,7 +60,7 @@ namespace TMRAgent.MySQL
             }
             catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"Fatal Error: {ex.Message}\r\n\r\n{ex.StackTrace}", ConsoleUtil.LogLevel.Fatal, ConsoleColor.Red);
+                Util.Log($"Fatal Error: {ex.Message}\r\n\r\n{ex.StackTrace}", Util.LogLevel.Fatal, ConsoleColor.Red);
             }
         }
 
@@ -69,11 +69,11 @@ namespace TMRAgent.MySQL
             try
             {
                 System.IO.File.WriteAllText(_configFileName, JsonConvert.SerializeObject(Configuration, Formatting.Indented));
-                ConsoleUtil.WriteToConsole($"Configuration file {_configFileName} saved", ConsoleUtil.LogLevel.Info);
+                Util.Log($"Configuration file {_configFileName} saved", Util.LogLevel.Info);
             }
             catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"Fatal Error: {ex.Message}\r\n\r\n{ex.StackTrace}", ConsoleUtil.LogLevel.Fatal, ConsoleColor.Red);
+                Util.Log($"Fatal Error: {ex.Message}\r\n\r\n{ex.StackTrace}", Util.LogLevel.Fatal, ConsoleColor.Red);
             }
         }
 

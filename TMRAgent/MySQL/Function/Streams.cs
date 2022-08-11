@@ -24,7 +24,7 @@ namespace TMRAgent.MySQL.Function
         {
             try
             {
-                ConsoleUtil.WriteToConsole($"[MySQL] ProcessStreamOnline Fired -> DateTime: {dateTime}", ConsoleUtil.LogLevel.Info);
+                Util.Log($"[MySQL] ProcessStreamOnline Fired -> DateTime: {dateTime}", Util.LogLevel.Info);
                 using (var db = new DBConnection.Database())
                 {
                     if (!force)
@@ -35,9 +35,9 @@ namespace TMRAgent.MySQL.Function
                         var currentStream = currentStreamDbEntry.ToList().OrderBy(x => x.LastSeen).FirstOrDefault();
                         if (currentStream != null)
                         {
-                            ConsoleUtil.WriteToConsole(
+                            Util.Log(
                                 $"[StreamEvent] Found an existing row in the Database for this ongoing stream, using StreamID {currentStream.Id} (Stream Started At {currentStream.Start}).",
-                                ConsoleUtil.LogLevel.Info, ConsoleColor.Yellow);
+                                Util.LogLevel.Info, ConsoleColor.Yellow);
                             Twitch.TwitchHandler.Instance.CurrentLiveStreamId = currentStream.Id;
                             db.Query<dynamic>(
                                 $"UPDATE `streams` SET `end` = NULL WHERE `streams`.`id` = {currentStream.Id};");
@@ -49,9 +49,11 @@ namespace TMRAgent.MySQL.Function
                                 .Value(p => p.LastSeen, DateTime.Now.ToUniversalTime())
                                 .InsertWithInt32Identity()!;
 
-                            ConsoleUtil.WriteToConsole(
+                            Twitch.TwitchHandler.Instance.LastUpdateTime = DateTime.Now.ToUniversalTime();
+
+                            Util.Log(
                                 $"New stream database entry created with ID {Twitch.TwitchHandler.Instance.CurrentLiveStreamId}",
-                                ConsoleUtil.LogLevel.Info);
+                                Util.LogLevel.Info);
 
                             Twitch.TwitchHandler.Instance.ChatService.ProcessStreamOnline();
                         }
@@ -62,6 +64,8 @@ namespace TMRAgent.MySQL.Function
                             .Value(p => p.Start, dateTime)
                             .Value(p => p.LastSeen, DateTime.Now.ToUniversalTime())
                             .InsertWithInt32Identity()!;
+
+                        Twitch.TwitchHandler.Instance.LastUpdateTime = DateTime.Now.ToUniversalTime();
                     }
                 }
             }
@@ -82,7 +86,7 @@ namespace TMRAgent.MySQL.Function
                         .Set(p => p.End, DateTime.Now.ToUniversalTime() - new TimeSpan(0, 2, 0, 0))
                         .Set(p => p.LastSeen, DateTime.Now.ToUniversalTime() - new TimeSpan(0, 2, 0, 0))
                         .Update();
-                    ConsoleUtil.WriteToConsole($"Cleaning Dirty Stream {dirtyStream.Id} which started at {dirtyStream.Start}!", ConsoleUtil.LogLevel.Info);
+                    Util.Log($"Cleaning Dirty Stream {dirtyStream.Id} which started at {dirtyStream.Start}!", Util.LogLevel.Info);
                 }
             }
         }

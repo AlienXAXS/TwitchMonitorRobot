@@ -28,7 +28,7 @@ namespace TMRAgent.MySQL.Function
                     if (usrTwitchIdFix != null && usrTwitchIdFix.TwitchId == 0)
                     {
                         // Fix the user
-                        ConsoleUtil.WriteToConsole($"Fixing TwitchID for user {Username} = {TwitchUserId}", ConsoleUtil.LogLevel.Info, ConsoleColor.Yellow);
+                        Util.Log($"Fixing TwitchID for user {Username} = {TwitchUserId}", Util.LogLevel.Info, ConsoleColor.Yellow);
                         UpdateExistingUser(usrTwitchIdFix.Id, TwitchId: TwitchUserId);
                     }
 

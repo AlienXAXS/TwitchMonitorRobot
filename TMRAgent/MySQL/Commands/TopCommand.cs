@@ -46,7 +46,7 @@ namespace TMRAgent.MySQL.Commands
                 }
             } catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"[Error] TopCommand.Handle: {ex.Message}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+                Util.Log($"[Error] TopCommand.Handle: {ex.Message}", Util.LogLevel.Error, ConsoleColor.Red);
             }
         }
     }

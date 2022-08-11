@@ -38,7 +38,7 @@ namespace TMRAgent.Discord
                 }
                 catch (Exception ex)
                 {
-                    ConsoleUtil.WriteToConsole($"Fatal error while reading {_configFileName}: {ex.Message}\r\n\r\n{ex.StackTrace}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+                    Util.Log($"Fatal error while reading {_configFileName}: {ex.Message}\r\n\r\n{ex.StackTrace}", Util.LogLevel.Error, ConsoleColor.Red);
                     return;
                 }
             }
@@ -50,7 +50,7 @@ namespace TMRAgent.Discord
                 }
                 catch (Exception ex)
                 {
-                    ConsoleUtil.WriteToConsole($"Fatal error while writing {_configFileName}: {ex.Message}\r\n\r\n{ex.StackTrace}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+                    Util.Log($"Fatal error while writing {_configFileName}: {ex.Message}\r\n\r\n{ex.StackTrace}", Util.LogLevel.Error, ConsoleColor.Red);
                 }
             }
         }

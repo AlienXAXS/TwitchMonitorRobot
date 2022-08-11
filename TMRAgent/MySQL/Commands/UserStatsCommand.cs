@@ -42,7 +42,7 @@ namespace TMRAgent.MySQL.Commands
 
                 if (redeemSpent > 0)
                 {
-                    responseMessage += " and redeemed {redeemSpent:n0} Brain Cells!.";
+                    responseMessage += $" and redeemed {redeemSpent:n0} Brain Cells!.";
                 }
                 else
                 {

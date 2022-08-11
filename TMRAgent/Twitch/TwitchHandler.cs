@@ -29,13 +29,13 @@ namespace TMRAgent.Twitch
                 var currentStream = currentStreamDbEntry.ToList().OrderBy(x => x.LastSeen).FirstOrDefault();
                 if (currentStream != null)
                 {
-                    ConsoleUtil.WriteToConsole($"Previous stream found. Started At: {currentStream.Start}, Last Seen: {currentStream.LastSeen}", ConsoleUtil.LogLevel.Info);
+                    Util.Log($"Previous stream found. Started At: {currentStream.Start}, Last Seen: {currentStream.LastSeen}", Util.LogLevel.Info);
                     CurrentLiveStreamId = currentStream.Id;
-                    LastUpdateTime = DateTime.Now;
+                    LastUpdateTime = DateTime.Now.ToUniversalTime();
                 }
                 else
                 {
-                    ConsoleUtil.WriteToConsole($"No previous stream found, waiting for a stream to start.", ConsoleUtil.LogLevel.Info);
+                    Util.Log($"No previous stream found, waiting for a stream to start.", Util.LogLevel.Info);
                 }
             }
         }

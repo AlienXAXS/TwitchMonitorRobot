@@ -14,7 +14,7 @@ namespace TMRAgent.MySQL.Function
             }
             catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"OAuth Exception:\r\n{ex.Message}\r\n{ex.StackTrace}", ConsoleUtil.LogLevel.Error);
+                Util.Log($"OAuth Exception:\r\n{ex.Message}\r\n{ex.StackTrace}", Util.LogLevel.Error);
                 return;
             }
 
@@ -32,7 +32,7 @@ namespace TMRAgent.MySQL.Function
             }
             catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"Database Exception:\r\n{ex.Message}\r\n{ex.StackTrace}", ConsoleUtil.LogLevel.Error);
+                Util.Log($"Database Exception:\r\n{ex.Message}\r\n{ex.StackTrace}", Util.LogLevel.Error);
             }
         }
     }

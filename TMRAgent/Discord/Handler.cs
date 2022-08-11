@@ -22,7 +22,7 @@ namespace TMRAgent.Discord
                 }
             } catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"[DiscordWebHookHandler] {ex.Message}\r\n\r\n{ex.StackTrace}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+                Util.Log($"[DiscordWebHookHandler] {ex.Message}\r\n\r\n{ex.StackTrace}", Util.LogLevel.Error, ConsoleColor.Red);
             }
         }
     }

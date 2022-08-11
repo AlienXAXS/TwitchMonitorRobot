@@ -45,7 +45,7 @@ namespace TMRAgent
 
         public static void InvokeApplicationExit()
         {
-            ConsoleUtil.WriteToConsole(" -> Application Exit Event Invoked... Shutting down!", ConsoleUtil.LogLevel.Info);
+            Util.Log(" -> Application Exit Event Invoked... Shutting down!", Util.LogLevel.Info);
             ExitRequested = true;
             Task.Run(StopApp);
             _manualResetEvent.WaitOne();
@@ -54,7 +54,7 @@ namespace TMRAgent
         static void StopApp()
         {
             if (ExitRequested) return;
-            ConsoleUtil.WriteToConsole($"Application exit requested, starting shutdown sequence", ConsoleUtil.LogLevel.Info);
+            Util.Log($"Application exit requested, starting shutdown sequence", Util.LogLevel.Info);
 
             ExitRequested = true;
             Twitch.TwitchHandler.Instance.Dispose();
@@ -66,7 +66,7 @@ namespace TMRAgent
         {
             DataConnection.DefaultSettings = new MySQL.DBConnection.MySettings();
 
-            ConsoleUtil.WriteToConsole($"Twitch Management Robot v{Version} Starting...", ConsoleUtil.LogLevel.Info);
+            Util.Log($"Twitch Management Robot v{Version} Starting...", Util.LogLevel.Info);
 
             await Task.Run(() =>
             {
@@ -76,47 +76,47 @@ namespace TMRAgent
                 new Program().StartMonitoringTwitch();
             });
 
-            ConsoleUtil.WriteToConsole("Application is ready!", ConsoleUtil.LogLevel.Info);
+            Util.Log("Application is ready!", Util.LogLevel.Info);
         }
 
         private void StartMonitoringTwitch()
         {
-            ConsoleUtil.WriteToConsole("Starting Twitch Monitor", ConsoleUtil.LogLevel.Info);
+            Util.Log("Starting Twitch Monitor", Util.LogLevel.Info);
             try
             {
                 Twitch.TwitchHandler.Instance.PubSubService.Start();
-                ConsoleUtil.WriteToConsole(" -> Success", ConsoleUtil.LogLevel.Info);
+                Util.Log(" -> Success", Util.LogLevel.Info);
             }
             catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"Fatal Error: {ex.Message}", ConsoleUtil.LogLevel.Error);
+                Util.Log($"Fatal Error: {ex.Message}", Util.LogLevel.Error);
             }
 
-            ConsoleUtil.WriteToConsole("Checking for an existing stream", ConsoleUtil.LogLevel.Info);
+            Util.Log("Checking for an existing stream", Util.LogLevel.Info);
             Twitch.TwitchHandler.Instance.CheckForExistingStream();
         }
 
         private void SetupMySqlBackend()
         {
-            ConsoleUtil.WriteToConsole("Connecting to MySQL Database Backend...", ConsoleUtil.LogLevel.Info);
+            Util.Log("Connecting to MySQL Database Backend...", Util.LogLevel.Info);
             MySQL.MySqlHandler.Instance.Connect();
-            ConsoleUtil.WriteToConsole(" -> Success", ConsoleUtil.LogLevel.Info);
+            Util.Log(" -> Success", Util.LogLevel.Info);
         }
 
         private void CheckConfigurationValidity()
         {
             if (!Twitch.ConfigurationHandler.Instance.IsConfigurationGood())
             {
-                ConsoleUtil.WriteToConsole("Twitch Configuration (twitch.conf) is invalid, needs username and auth token!", ConsoleUtil.LogLevel.Error);
-                ConsoleUtil.WriteToConsole("Press ENTER to exit", ConsoleUtil.LogLevel.Error);
+                Util.Log("Twitch Configuration (twitch.conf) is invalid, needs username and auth token!", Util.LogLevel.Error);
+                Util.Log("Press ENTER to exit", Util.LogLevel.Error);
                 Console.ReadLine();
                 return;
             }
 
             if (!MySQL.ConfigurationHandler.Instance.IsConfigurationGood())
             {
-                ConsoleUtil.WriteToConsole("MySQL Configuration (db.conf) is invalid, needs connection string!", ConsoleUtil.LogLevel.Error);
-                ConsoleUtil.WriteToConsole("Press ENTER to exit", ConsoleUtil.LogLevel.Error);
+                Util.Log("MySQL Configuration (db.conf) is invalid, needs connection string!", Util.LogLevel.Error);
+                Util.Log("Press ENTER to exit", Util.LogLevel.Error);
                 Console.ReadLine();
                 return;
             }
@@ -124,17 +124,17 @@ namespace TMRAgent
 
         private void ConnectTwitchChat()
         {
-            ConsoleUtil.WriteToConsole("Connecting to Twitch", ConsoleUtil.LogLevel.Info);
+            Util.Log("Connecting to Twitch", Util.LogLevel.Info);
             try
             {
                 Twitch.TwitchHandler.Instance.ChatService.Connect();
             }
             catch (Exception ex)
             {
-                ConsoleUtil.WriteToConsole($"[TwitchChat] Error connecting: {ex.Message}", ConsoleUtil.LogLevel.Error, ConsoleColor.Red);
+                Util.Log($"[TwitchChat] Error connecting: {ex.Message}", Util.LogLevel.Error, ConsoleColor.Red);
                 return;
             }
-            ConsoleUtil.WriteToConsole(" -> Success", ConsoleUtil.LogLevel.Info);
+            Util.Log(" -> Success", Util.LogLevel.Info);
         }
 
         
