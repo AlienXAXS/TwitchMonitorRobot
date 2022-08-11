@@ -29,6 +29,8 @@ namespace TMRAgent.Twitch
                 var currentStream = currentStreamDbEntry.ToList().OrderBy(x => x.LastSeen).FirstOrDefault();
                 if (currentStream != null)
                 {
+                    ChatService.SendMessage($"[TMR] v{Program.Version} Started! | Found a stream that started at {currentStream.Start}.  Logging messages and other stream events!");
+
                     Util.Log($"Previous stream found. Started At: {currentStream.Start}, Last Seen: {currentStream.LastSeen}", Util.LogLevel.Info);
                     CurrentLiveStreamId = currentStream.Id;
                     LastUpdateTime = DateTime.Now.ToUniversalTime();

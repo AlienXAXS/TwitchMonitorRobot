@@ -352,5 +352,10 @@ namespace TMRAgent.Twitch.Chat
         {
             _client?.Disconnect();
         }
+
+        public void SendMessage(string message)
+        {
+            _client?.SendMessage(ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName, message);
+        }
     }
 }
