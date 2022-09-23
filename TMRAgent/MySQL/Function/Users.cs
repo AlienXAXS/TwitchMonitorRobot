@@ -7,7 +7,7 @@ namespace TMRAgent.MySQL.Function
 {
     internal class Users
     {
-        private Dictionary<string, int> _usernameMemory = new();
+        private readonly Dictionary<string, int> _usernameMemory = new();
 
         public int GetUserId(string Username, int TwitchUserId, bool isModerator = false)
         {
@@ -78,7 +78,7 @@ namespace TMRAgent.MySQL.Function
             {
                 using (var db = new DBConnection.Database())
                 {
-                    var user = db.Users.Where(u => u.TwitchId == TwitchUserId);
+                    var user = db.Users.Where(u => u.Id == TwitchUserId);
                     if (user.Any())
                     {
                         userId = user.First().Id;
@@ -92,6 +92,25 @@ namespace TMRAgent.MySQL.Function
             }
 
             return userId;
+        }
+
+        public int? GetTwitchIdFromDbId(int? DbId)
+        {
+            if ( DbId == null ) return null;
+
+            int? returnedValue = null;
+
+            var userId = DbId;
+            using (var db = new DBConnection.Database())
+            {
+                var user = db.Users.Where(x => x.Id.Equals(userId));
+                if (user.Any())
+                {
+                    returnedValue = user.First().TwitchId;
+                }
+            }
+
+            return returnedValue;
         }
 
         public int AddNewUser(string Username, int TwitchUserId, bool isModerator = false)

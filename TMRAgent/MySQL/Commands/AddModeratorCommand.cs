@@ -9,7 +9,7 @@ namespace TMRAgent.MySQL.Commands
         {
             var tc = Twitch.TwitchHandler.Instance.ChatService.GetTwitchClient();
 
-            if ( parameters.Length == 2)
+            if ( parameters.Length == 2 )
             {
                 var commandToBeAdded = parameters[1].ToLower();
                 if ( !commandToBeAdded.StartsWith("!") )
@@ -30,7 +30,6 @@ namespace TMRAgent.MySQL.Commands
                         tc.SendMessage(message.Channel, $"The command {commandToBeAdded} already exists");
                     }
                 }
-
             } else
             {
                 tc.SendMessage(message.Channel, $"Invalid use of command");

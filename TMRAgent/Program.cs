@@ -11,7 +11,7 @@ namespace TMRAgent
     {
         public static bool ExitRequested = false;
 
-        public static string Version = "2.0 RC1";
+        public static string Version = "2.1 (Albion Online Version)";
 
         private readonly object _syncObject = new();
 
@@ -91,9 +91,6 @@ namespace TMRAgent
             {
                 Util.Log($"Fatal Error: {ex.Message}", Util.LogLevel.Error);
             }
-
-            Util.Log("Checking for an existing stream", Util.LogLevel.Info);
-            Twitch.TwitchHandler.Instance.CheckForExistingStream();
         }
 
         private void SetupMySqlBackend()

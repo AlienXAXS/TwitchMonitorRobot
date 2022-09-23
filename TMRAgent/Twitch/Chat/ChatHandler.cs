@@ -20,6 +20,7 @@ namespace TMRAgent.Twitch.Chat
         private readonly TopCommand _topCommand = new();
         private readonly UserStatsCommand _userStatsCommand = new();
         private readonly StreamCommands _streamCommands = new();
+        private readonly AlbionOnlineLookup _albionOnlineLookup = new();
 
         private TwitchClient? _client;
         public TwitchClient? GetTwitchClient()
@@ -212,6 +213,9 @@ namespace TMRAgent.Twitch.Chat
         private void Client_OnJoinedChannel(object? sender, OnJoinedChannelArgs e)
         {
             Util.Log($"[Twitch Bot] Joined channel {e.Channel}", Util.LogLevel.Info);
+
+            Util.Log("Checking for an existing stream", Util.LogLevel.Info);
+            TwitchHandler.Instance.CheckForExistingStream();
         }
 
         public void ProcessStreamOnline()
@@ -331,6 +335,11 @@ namespace TMRAgent.Twitch.Chat
 
                 case "!!help":
                     _client.SendMessage(chatMessage.Channel, $"Commands are: !!top [redeem], !!about, !!stats, !!dead, !!walls.  (Mods Only: !!add_mod_action, !!remove_mod_action, !!manage_user, !!shutdown)");
+                    break;
+
+                case "!!aol":
+                case "!!aor":
+                    _albionOnlineLookup.ProcessCommandMessage(chatMessage, parameters);
                     break;
             }
         }

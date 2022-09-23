@@ -1,4 +1,5 @@
 ﻿using System;
+using TMRAgent.MySQL.Commands;
 
 namespace TMRAgent.MySQL
 {
@@ -14,6 +15,7 @@ namespace TMRAgent.MySQL
         public Function.Users Users = new();
         public Function.Commands Commands = new();
         public Function.Subscriptions Subscriptions = new();
+        public Function.AlbionOnlineLookup AlbionOnlineLookup = new();
 
         public void Connect()
         {

@@ -21,6 +21,8 @@ namespace TMRAgent.Twitch
 
         public void CheckForExistingStream()
         {
+            if (CurrentLiveStreamId != null) return;
+
             using (var db = new MySQL.DBConnection.Database())
             {
                 var currentStreamDbEntry = db.Streams.DefaultIfEmpty(null).Where(x =>
