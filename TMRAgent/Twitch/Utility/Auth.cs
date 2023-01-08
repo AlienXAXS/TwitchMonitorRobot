@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Org.BouncyCastle.Bcpg.Sig;
 
 namespace TMRAgent.Twitch.Utility
 {
     public class Auth
     {
+        private readonly Object Lockable = new();
 
         public enum AuthType
         {
@@ -32,79 +32,94 @@ namespace TMRAgent.Twitch.Utility
 
         public bool TestAuth(AuthType authType)
         {
-            var api = new TwitchLib.Api.TwitchAPI
+            lock (Lockable)
             {
-                Settings =
+                var api = new TwitchLib.Api.TwitchAPI
                 {
-                    ClientId = ConfigurationHandler.Instance.Configuration.AppClientId
+                    Settings =
+                    {
+                        ClientId = ConfigurationHandler.Instance.Configuration.AppClientId
+                    }
+                };
+
+                var authToken = GetAuthTokenFromAuthType(authType);
+
+                switch (authType)
+                {
+                    case AuthType.TwitchChat:
+                    case AuthType.LiveStreamMonitorService:
+                        if (ConfigurationHandler.Instance.Configuration.TwitchChat.RefreshToken == null ||
+                            ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry == null ||
+                            HasTokenExpired(authType))
+                        {
+                            Util.Log(
+                                $"[OAuthChecker] {Enum.GetName(authType)} Token has expired, marking it as dirty! (exp: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry})",
+                                Util.LogLevel.Info);
+                            return false;
+                        }
+
+                        break;
+
+                    case AuthType.PubSub:
+                        if (ConfigurationHandler.Instance.Configuration.PubSub.RefreshToken == null ||
+                            ConfigurationHandler.Instance.Configuration.PubSub.TokenExpiry == null ||
+                            HasTokenExpired(authType))
+                        {
+                            Util.Log(
+                                $"[OAuthChecker] {Enum.GetName(authType)} Token has expired, marking it as dirty! (exp: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry})",
+                                Util.LogLevel.Info);
+                            return false;
+                        }
+
+                        break;
                 }
-            };
 
-            var authToken = GetAuthTokenFromAuthType(authType);
-
-            switch (authType)
-            {
-                case AuthType.TwitchChat:
-                case AuthType.LiveStreamMonitorService:
-                    if (ConfigurationHandler.Instance.Configuration.TwitchChat.RefreshToken == null ||
-                        ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry == null ||
-                        HasTokenExpired(authType))
-                    {
-                        Util.Log($"[OAuthChecker] {Enum.GetName(authType)} Token has expired, marking it as dirty! (exp: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry})", Util.LogLevel.Info);
-                        return false;
-                    }
-
-                    break;
-
-                case AuthType.PubSub:
-                    if (ConfigurationHandler.Instance.Configuration.PubSub.RefreshToken == null ||
-                        ConfigurationHandler.Instance.Configuration.PubSub.TokenExpiry == null ||
-                        HasTokenExpired(authType))
-                    {
-                        Util.Log($"[OAuthChecker] {Enum.GetName(authType)} Token has expired, marking it as dirty! (exp: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry})", Util.LogLevel.Info);
-                        return false;
-                    }
-
-                    break;
-            }
-
-            try
-            {
-                return api.Auth.ValidateAccessTokenAsync(authToken).WaitAsync(CancellationToken.None).Result != null;
-            }
-            catch (Exception)
-            {
-                return false;
+                try
+                {
+                    return api.Auth.ValidateAccessTokenAsync(authToken).WaitAsync(CancellationToken.None).Result !=
+                           null;
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
             }
         }
 
         public bool Validate(AuthType validateOn, bool AutomaticRefresh)
         {
-            Util.Log($"[OAuthChecker] Checking OAuth Tokens Validity for {Enum.GetName(validateOn)}", Util.LogLevel.Info);
-            var validationResult = TestAuth(validateOn);
-
-            if (!validationResult)
+            lock (Lockable)
             {
-                Util.Log($"[OAuthChecker] Failed to validate OAuth Token for {Enum.GetName(validateOn)}",
-                    Util.LogLevel.Warn,
-                    ConsoleColor.Yellow);
+                Util.Log($"[OAuthChecker] Checking OAuth Tokens Validity for {Enum.GetName(validateOn)}",
+                    Util.LogLevel.Info);
+                var validationResult = TestAuth(validateOn);
 
-                if (AutomaticRefresh)
+                if (!validationResult)
                 {
-                    if (!RefreshToken(validateOn).GetAwaiter().GetResult())
+                    Util.Log($"[OAuthChecker] Failed to validate OAuth Token for {Enum.GetName(validateOn)}",
+                        Util.LogLevel.Warn,
+                        ConsoleColor.Yellow);
+
+                    if (AutomaticRefresh)
                     {
-                        throw new Exception(
-                            $"Unable to refresh Auth Token for {Enum.GetName(validateOn)}");
+                        if (!RefreshToken(validateOn).GetAwaiter().GetResult())
+                        {
+                            throw new Exception(
+                                $"Unable to refresh Auth Token for {Enum.GetName(validateOn)}");
+                        }
+
+                        return true;
                     }
+
+                    return false;
+                }
+                else
+                {
+                    Util.Log(
+                        $"[OAuthChecker] Successfully validated OAuth Tokens for {Enum.GetName(validateOn)}, Expiry: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry}/UTC",
+                        Util.LogLevel.Info);
                     return true;
                 }
-
-                return false;
-            }
-            else
-            {
-                Util.Log($"[OAuthChecker] Successfully validated OAuth Tokens for {Enum.GetName(validateOn)}, Expiry: {ConfigurationHandler.Instance.Configuration.TwitchChat.TokenExpiry}/UTC", Util.LogLevel.Info);
-                return true;
             }
         }
 
@@ -117,7 +132,7 @@ namespace TMRAgent.Twitch.Utility
         {
             // Get our refresh token
             var refreshToken = GetRefreshTokenFromAuthType(authType);
-            
+
             var config = ConfigurationHandler.Instance.Configuration;
 
             var api = new TwitchLib.Api.TwitchAPI();
@@ -134,18 +149,21 @@ namespace TMRAgent.Twitch.Utility
                         case AuthType.LiveStreamMonitorService:
                             config.TwitchChat.AuthToken = refreshRequest.AccessToken;
                             config.TwitchChat.RefreshToken = refreshRequest.RefreshToken;
-                            config.TwitchChat.TokenExpiry = DateTime.Now.ToUniversalTime().AddSeconds(refreshRequest.ExpiresIn);
+                            config.TwitchChat.TokenExpiry =
+                                DateTime.Now.ToUniversalTime().AddSeconds(refreshRequest.ExpiresIn);
                             break;
                         case AuthType.PubSub:
                             config.PubSub.AuthToken = refreshRequest.AccessToken;
                             config.PubSub.RefreshToken = refreshRequest.RefreshToken;
-                            config.PubSub.TokenExpiry = DateTime.Now.ToUniversalTime().AddSeconds(refreshRequest.ExpiresIn);
+                            config.PubSub.TokenExpiry =
+                                DateTime.Now.ToUniversalTime().AddSeconds(refreshRequest.ExpiresIn);
                             break;
                         default:
                             throw new ArgumentOutOfRangeException(nameof(authType), authType, null);
                     }
-                    
-                    Util.Log($"[OAuthRefresh] Successfully refreshed OAuth Tokens for {Enum.GetName(authType)}", Util.LogLevel.Info);
+
+                    Util.Log($"[OAuthRefresh] Successfully refreshed OAuth Tokens for {Enum.GetName(authType)}",
+                        Util.LogLevel.Info);
 
                     ConfigurationHandler.Instance.Save();
                     return true;
@@ -153,23 +171,24 @@ namespace TMRAgent.Twitch.Utility
             }
             catch (Exception ex)
             {
-                Util.Log($"[OAuthRefresh] Error while handling an OAuth Token Refresh for {Enum.GetName(authType)}: {ex.Message}", Util.LogLevel.Error, ConsoleColor.Red);
+                Util.Log(
+                    $"[OAuthRefresh] Error while handling an OAuth Token Refresh for {Enum.GetName(authType)}: {ex.Message}",
+                    Util.LogLevel.Error, ConsoleColor.Red);
                 return false;
             }
-
             return false;
         }
 
-        private string GetAuthTokenFromAuthType(AuthType authType)
+        private string GetAuthTokenFromAuthType(Auth.AuthType authType)
         {
             var authToken = "";
             switch (authType)
             {
-                case AuthType.TwitchChat:
+                case Auth.AuthType.TwitchChat:
                     authToken = ConfigurationHandler.Instance.Configuration.TwitchChat.AuthToken;
                     break;
 
-                case AuthType.PubSub:
+                case Auth.AuthType.PubSub:
                     authToken = ConfigurationHandler.Instance.Configuration.PubSub.AuthToken;
                     break;
             }
@@ -177,17 +196,17 @@ namespace TMRAgent.Twitch.Utility
             return authToken;
         }
 
-        private string GetRefreshTokenFromAuthType(AuthType authType)
+        private string GetRefreshTokenFromAuthType(Auth.AuthType authType)
         {
             var refreshToken = "";
             switch (authType)
             {
-                case AuthType.TwitchChat:
-                case AuthType.LiveStreamMonitorService:
+                case Auth.AuthType.TwitchChat:
+                case Auth.AuthType.LiveStreamMonitorService:
                     refreshToken = ConfigurationHandler.Instance.Configuration.TwitchChat.RefreshToken;
                     break;
 
-                case AuthType.PubSub:
+                case Auth.AuthType.PubSub:
                     refreshToken = ConfigurationHandler.Instance.Configuration.PubSub.RefreshToken;
                     break;
             }

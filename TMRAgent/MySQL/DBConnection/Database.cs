@@ -15,5 +15,7 @@ namespace TMRAgent.MySQL.DBConnection
         public ITable<Models.ModCommands> ModCommands => this.GetTable<Models.ModCommands>();
         public ITable<Models.Subscriptions> Subscriptions => this.GetTable<Models.Subscriptions>();
         public ITable<Models.AlbionOnlineLookup> AlbionOnlineLookups => this.GetTable<Models.AlbionOnlineLookup>();
+        public ITable<Models.Logging> Logging => this.GetTable<Models.Logging>();
+        public ITable<Models.Scripts> Scripts => this.GetTable<Models.Scripts>();
     }
 }

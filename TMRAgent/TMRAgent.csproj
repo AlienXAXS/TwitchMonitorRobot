@@ -11,6 +11,7 @@
     <PackageReference Include="discord-webhook-client" Version="3.1.0" />
     <PackageReference Include="linq2db" Version="4.1.1" />
     <PackageReference Include="MySql.Data" Version="8.0.29" />
+    <PackageReference Include="NLua" Version="1.6.0" />
   </ItemGroup>
 
   <ItemGroup>

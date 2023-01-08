@@ -78,7 +78,7 @@ namespace TMRAgent.MySQL.Function
             {
                 using (var db = new DBConnection.Database())
                 {
-                    var user = db.Users.Where(u => u.Id == TwitchUserId);
+                    var user = db.Users.Where(u => u.TwitchId == TwitchUserId);
                     if (user.Any())
                     {
                         userId = user.First().Id;

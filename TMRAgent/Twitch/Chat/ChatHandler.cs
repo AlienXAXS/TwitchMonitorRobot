@@ -22,6 +22,8 @@ namespace TMRAgent.Twitch.Chat
         private readonly StreamCommands _streamCommands = new();
         private readonly AlbionOnlineLookup _albionOnlineLookup = new();
 
+        private readonly Object Lockable = new();
+
         private TwitchClient? _client;
         public TwitchClient? GetTwitchClient()
         {
@@ -221,7 +223,7 @@ namespace TMRAgent.Twitch.Chat
         public void ProcessStreamOnline()
         {
             if (_client is {IsConnected: false}) return;
-            _client?.SendMessage(ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName!, $"[BOT] Stream Started - Monitoring Chat and Bit Events.");
+            _client?.SendMessage(ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName!, $"[TMR-Agent-Bot] Stream Started - Monitoring Chat and Bit Events.");
         }
 
         public void ProcessStreamOffline()
@@ -234,9 +236,8 @@ namespace TMRAgent.Twitch.Chat
         {
             MySQL.MySqlHandler.Instance.Streams.CheckForStreamUpdate();
 
-            if (e.ChatMessage.Message.StartsWith("!!"))
+            if (ProcessChatCommandMessage(e.ChatMessage))
             {
-                ProcessChatCommandMessage(e.ChatMessage);
                 return;
             }
             if (e.ChatMessage.Message.StartsWith("!"))
@@ -266,39 +267,40 @@ namespace TMRAgent.Twitch.Chat
             MySQL.MySqlHandler.Instance.Subscriptions.ProcessSubscription(e.GiftedSubscription.MsgParamRecipientDisplayName, e.GiftedSubscription.MsgParamRecipientId, false, false, true, e.GiftedSubscription.DisplayName, e.GiftedSubscription.UserId);
         }
 
-        private void ProcessChatCommandMessage(ChatMessage chatMessage)
+        private bool ProcessChatCommandMessage(ChatMessage chatMessage)
         {
-            if (_client == null) return;
+            if (_client == null) return false;
 
             var parameters = chatMessage.Message.Trim().Split(' ');
 
             switch (parameters[0].ToLower())
             {
                 case "!!stream_online":
-                    if (!IsUserModeratorOrBroadcaster(chatMessage)) return;
+                    if (!IsUserModeratorOrBroadcaster(chatMessage)) return true;
                     _streamCommands.HandleForceStreamOnline(chatMessage, parameters);
-                    break;
+                    return true;
 
                 case "!!add_mod_action":
-                    if (!IsUserModeratorOrBroadcaster(chatMessage)) return;
+                    if (!IsUserModeratorOrBroadcaster(chatMessage)) return true;
                     _addModeratorCommand.Handle(chatMessage, parameters);
-                    break;
+                    return true;
 
                 case "!!remove_mod_action":
-                    if (!IsUserModeratorOrBroadcaster(chatMessage)) return;
+                    if (!IsUserModeratorOrBroadcaster(chatMessage)) return true;
                     _removeModeratorCommand.Handle(chatMessage, parameters);
-                    break;
+                    return true;
 
                 case "!!shutdown":
-                    if (!IsUserModeratorOrBroadcaster(chatMessage)) return;
-                    _client.SendMessage(chatMessage.Channel, "TMR Shutting down now, Byeeee!");
+                    if (!IsUserModeratorOrBroadcaster(chatMessage)) return true;
+                    _client.SendMessage(chatMessage.Channel, "[BOT] TMR Requested a shutdown.");
                     Program.InvokeApplicationExit();
-                    break;
+                    return true;
 
                 case "!!manage_user":
-                    if (!IsUserModeratorOrBroadcaster(chatMessage)) return;
+                    if (!IsUserModeratorOrBroadcaster(chatMessage)) return true;
                     _userManagerCommand.Handle(chatMessage, parameters);
-                    break;
+
+                    return true;
 
                 case "!!walls":
                     using (var db = new MySQL.DBConnection.Database())
@@ -306,11 +308,11 @@ namespace TMRAgent.Twitch.Chat
                         var walls = db.Messages.Count(x => x.Message.ToLower().Contains("wall") && !x.Message.StartsWith("Stats"));
                         _client.SendMessage(chatMessage.Channel, $"Stats: At least {walls} messages have been sent describing how much @Mind1 shoots walls - GO MIND!");
                     }
-                    break;
+                    return true;
 
                 case "!!stats":
                     _userStatsCommand.Handle(chatMessage, parameters);
-                    break;
+                    return true;
 
                 case "!!dead":
                     using (var db = new MySQL.DBConnection.Database())
@@ -318,7 +320,7 @@ namespace TMRAgent.Twitch.Chat
                         var deadCmds = db.Commands.Where(x => x.Command.ToLower().Equals("!dead"));
                         _client.SendMessage(chatMessage.Channel, $"Stats: Mind1 has died at least {deadCmds.Count()} times - Ouch! (num of !dead used)");
                     }
-                    break;
+                    return true;
 
                 case "!!about":
                     using (var db = new MySQL.DBConnection.Database())
@@ -327,21 +329,25 @@ namespace TMRAgent.Twitch.Chat
                         var totalMessages = db.Messages.Count();
                         _client.SendMessage(chatMessage.Channel, $"I am Twitch Monitor Robot v{Program.Version} - I am logging everything that happens here.  Currently watching {totalUsers:n0} users having sent {totalMessages:n0} chat messages! - Created by AlienX");
                     }
-                    break;
+                    return true;
 
                 case "!!top":
                     _topCommand.Handle(chatMessage, parameters);
-                    break;
+                    return true;
 
                 case "!!help":
-                    _client.SendMessage(chatMessage.Channel, $"Commands are: !!top [redeem], !!about, !!stats, !!dead, !!walls.  (Mods Only: !!add_mod_action, !!remove_mod_action, !!manage_user, !!shutdown)");
-                    break;
+                    _client.SendMessage(chatMessage.Channel, $"Commands are: !!top [redeem], !!about, !!stats, !!dead, !!walls, !aol, !aor  (Mods Only: !!add_mod_action, !!remove_mod_action, !!manage_user, !!shutdown)");
+                    return true;
 
                 case "!!aol":
                 case "!!aor":
+                case "!aol":
+                case "!aor":
                     _albionOnlineLookup.ProcessCommandMessage(chatMessage, parameters);
-                    break;
+                    return true;
             }
+
+            return false;
         }
 
         private bool IsUserModeratorOrBroadcaster(ChatMessage chatMessage)
@@ -359,12 +365,20 @@ namespace TMRAgent.Twitch.Chat
 
         public void Dispose()
         {
-            _client?.Disconnect();
+            if (_client == null) return;
+
+            if ( _client.IsConnected )
+                _client.Disconnect();
         }
 
         public void SendMessage(string message)
         {
             _client?.SendMessage(ConfigurationHandler.Instance.Configuration.TwitchChat.ChannelName, message);
+        }
+
+        public void SendMessage(string channel, string message)
+        {
+            _client?.SendMessage(channel, message);
         }
     }
 }

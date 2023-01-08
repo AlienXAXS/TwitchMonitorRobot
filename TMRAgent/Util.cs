@@ -28,7 +28,8 @@ namespace TMRAgent
             Debug,
             Warn,
             Error,
-            Fatal
+            Fatal,
+            Lua
         }
     }
 }
