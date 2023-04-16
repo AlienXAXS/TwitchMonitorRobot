@@ -32,7 +32,7 @@ namespace TMRAgent.Twitch.Events
 
             _pubSubClient.OnPubSubServiceConnected += (sender, args) =>
             {
-                _pubSubClient?.SendTopics(ConfigurationHandler.Instance.Configuration.PubSub.AuthToken!);
+                _pubSubClient?.SendTopics(ConfigurationHandler.Instance.Configuration.PubSub.AuthToken);
             };
 
             _pubSubClient.OnBitsReceivedV2 += PubSubClient_OnBitsReceivedV2!;

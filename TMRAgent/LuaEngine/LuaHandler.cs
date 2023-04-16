@@ -12,7 +12,7 @@ namespace TMRAgent.LuaEngine
         public static LuaHandler Instance = _instance ?? (_instance = new LuaHandler());
         private static readonly LuaHandler _instance;
 
-        private const string _scriptPath = @".\Scripts";
+        private const string _scriptPath = @"./Scripts";
 
         private readonly FileSystemWatcher _fileSystemWatcher = new FileSystemWatcher(_scriptPath);
 

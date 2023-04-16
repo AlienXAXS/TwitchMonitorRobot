@@ -91,9 +91,6 @@ namespace TMRAgent.Twitch.Chat
             _client.OnNewSubscriber += Client_OnNewSubscriber;
             _client.OnReSubscriber += ClientOnOnReSubscriber;
             _client.OnGiftedSubscription += Client_OnGiftedSubscription;
-            
-            // Tests
-            _client.OnRitualNewChatter += Client_OnRitualNewChatter;
 
             _client.Connect();
 
@@ -185,11 +182,6 @@ namespace TMRAgent.Twitch.Chat
 
                 _client?.Connect();
             }
-        }
-
-        private void Client_OnRitualNewChatter(object? sender, OnRitualNewChatterArgs e)
-        {
-            Util.Log($"Possible First Time Chatter: {e.RitualNewChatter.DisplayName}", Util.LogLevel.Info, ConsoleColor.Cyan);
         }
 
         private void ClientOnOnChannelStateChanged(object? sender, OnChannelStateChangedArgs e)
