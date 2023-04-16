@@ -19,7 +19,11 @@ namespace TMRAgent
             // Don't throw debug messages at Discord.
             if (logLevel == LogLevel.Debug) return;
 
-            Discord.Handler.SendWebhookMessage($"[{callerFilePath}@{callerLineNumber}/{callerName}/T{System.Threading.Thread.CurrentThread.ManagedThreadId}] -> [{Enum.GetName(logLevel)}] {message}");
+            if (logLevel == LogLevel.Error || logLevel == LogLevel.Fatal)
+            {
+                Discord.Handler.SendWebhookMessage(
+                    $"[{callerFilePath}@{callerLineNumber}/{callerName}/T{System.Threading.Thread.CurrentThread.ManagedThreadId}] -> [{Enum.GetName(logLevel)}] {message}");
+            }
         }
 
         public enum LogLevel
